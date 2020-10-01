@@ -103,10 +103,10 @@ class Movies(object):
             old_list = pickle.load( chatfile )
             chatfile.close()
 
-            ret = ''
-            for i in range(0, len(old_list['finished'])):
-                ret += "{}: {}\n".format(i+1, old_list['finished'][i])
-            return ret
+            finished = old_list["finished"][::-1]
+            return "\n".join([
+                "{}: {}".format(e[0]+1, e[1]) for e in enumerate(finished)
+            ])
         except (IOError, EOFError) as e:
             # chat doesn't have a list (or file is empty)
             return -1
