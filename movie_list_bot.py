@@ -98,36 +98,16 @@ class Movies:
         return Movies.display(g["list"])
 
     def watched_a_movie(self, chat_id, movie):
-        f = os.path.join('chats',str(chat_id))
+        g = self._read(chat_id)
 
-        try:
-            chatfile = open(f, 'rb')
+        idx = Movies.contains(g, "list", movie)
+        if idx >= 0:
+            g["list"].pop(idx)
 
-            g = pickle.load( chatfile )
-            old_list = g['list']
-            finished = g['finished']
-            if movie in old_list:
-                old_list.remove(movie)
-            if movie not in finished:
-                finished.append(movie)
+        if Movies.contains(g, "finished", movie) == -1:
+            g["finished"].append(movie)
 
-            chatfile.close()
-            chatfile = open(f, 'wb')
-            pickle.dump(g, chatfile)
-            chatfile.close()
-
-        except (EOFError, IOError, FileNotFoundError) as e:
-            # file is empty (what?)
-            chatfile = open(f, 'wb')
-
-            g = {}
-            g['list'] = []
-            g['finished'] = [movie]
-
-            pickle.dump(g, chatfile)
-            chatfile.close()
-
-            return 0
+        self._update(chat_id, g)
         
     def finished_movies(self, chat_id):
         g = self._read(chat_id)
