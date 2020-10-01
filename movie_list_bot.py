@@ -120,8 +120,12 @@ def handle(msg):
 
     # Add a movie to the watchlist (creates the group if it didn't exist yet)
     if command.startswith("/add"):
-        first_space = command.index(" ")
-        movie_list = command[first_space + 1 :].strip()
+        try:
+            first_space = command.index(" ")
+            movie_list = command[first_space + 1 :].strip()
+        except ValueError:
+            movie_list = None
+
         if not movie_list:
             BOT.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
@@ -153,8 +157,11 @@ def handle(msg):
 
     # Mark a movie as watched
     elif command.startswith("/watched"):
-        first_space = command.index(" ")
-        movie_list = command[first_space + 1 :].strip()
+        try:
+            first_space = command.index(" ")
+            movie_list = command[first_space + 1 :].strip()
+        except ValueError:
+            movie_list = None
 
         if not movie_list:
             BOT.sendMessage(chat_id, "Make sure to include a movie title with /watched")
