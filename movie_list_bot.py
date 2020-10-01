@@ -73,25 +73,13 @@ class Movies:
         return False
 
     def remove_movie(self, chat_id, movienum):
-        f = os.path.join('chats',str(chat_id))
-
-        new_list = []
-        finished = []
-        with open(f, "rb") as chatfile:
-            g = pickle.load(chatfile)
-            finished = g["finished"]
-            new_list = list(map(
-                lambda e: e[1],
-                list(filter(lambda e: e[0] != int(movienum)-1, enumerate(g["list"])))
-            ))
-
-        with open(f, "wb") as chatfile:
-            g = {}
-            g["list"] = new_list
-            g["finished"] = finished
-            pickle.dump(g, chatfile)
-
-        return 0
+        g = self._read(chat_id)
+        try:
+            moviename = g["list"].pop(movienum-1)
+            self._update(chat_id, g)
+            return moviename
+        except IndexError:
+            return ""
 
     def list_movies(self, chat_id):
         g = self._read(chat_id)
@@ -174,11 +162,17 @@ def handle(msg):
 
     elif command.startswith("/remove"):
         try:
-            movie_num = command.split(" ")[1]
-            movies.remove_movie(chat_id, movie_num)
-            bot.sendMessage(chat_id, "removed {}".format(movie_num))
-        except IndexError:
-            bot.sendMessage(chat_id, "/remove endpoint requires a number.")
+            movie_num = int(command.split(" ")[1])
+            movie_name = movies.remove_movie(chat_id, movie_num)
+            if movie_name:
+                bot.sendMessage(chat_id, "Removed '{}'".format(movie_name))
+            else:
+                bot.sendMessage(
+                    chat_id,
+                    "Not enough items in list (invalid number?): {}".format(movie_num)
+                )
+        except IndexError, ValueError:
+            bot.sendMessage(chat_id, "/remove requires a list item's number.")
 
     # help string
     elif command[:5] == '/help':
