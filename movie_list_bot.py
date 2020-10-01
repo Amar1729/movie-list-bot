@@ -182,7 +182,7 @@ def handle(msg):
                     chat_id,
                     "Not enough items in list (invalid number?): {}".format(movie_num),
                 )
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             BOT.sendMessage(chat_id, "/remove requires a list item's number.")
 
     # help string
