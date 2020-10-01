@@ -1,6 +1,5 @@
 #!/venv/bin/python3
 
-import configparser
 import os
 import pickle
 import sys
@@ -8,6 +7,9 @@ import time
 from pathlib import Path
 
 import telepot
+
+# local settings.py with KEY (received from BotFather)
+from settings import KEY
 
 
 BASE_DIR = os.path.dirname(Path(__file__).absolute())
@@ -191,13 +193,15 @@ def handle(msg):
         bot.sendMessage(chat_id, help_string)
 
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-key = config['DEFAULT']['key']
-bot = telepot.Bot(key)
+def main():
+    bot = telepot.Bot(KEY)
 
-bot.message_loop(handle)
-print("i'm listening yo")
+    bot.message_loop(handle)
+    print("i'm listening yo")
 
-while 1:
-    time.sleep(10)
+    while True:
+        time.sleep(10)
+
+
+if __name__ == "__main__":
+    main()
