@@ -2,6 +2,7 @@
 
 import os
 import pickle
+import random
 import sys
 import time
 from pathlib import Path
@@ -19,6 +20,7 @@ COMMANDS = {
     "/add": "Add a movie to your watchlist",
     "/list": "List of movies to watch",
     "/remove": "Remove a a movie from your watchlist (by number)",
+    "/random": "Get __n__ random movies from your list (default returns only one)",
     "/watched": "Tell movie_list_bot you've watched this movie (and remove it from your watchlist)",
     "/finished": "List of movies your group has finished",
     "/help": "Show help for this bot",
@@ -105,6 +107,11 @@ class Movies:
         g = self._read(chat_id)
         return Movies.display(g["finished"][::-1])
 
+    def get_random(self, chat_id, count):
+        g = self._read(chat_id)
+        movie_list = random.shuffle(g["list"])[:count]
+        return movie_list
+
 
 MOVIES = Movies()
 
@@ -153,6 +160,21 @@ def handle(msg):
         else:
             BOT.sendMessage(
                 chat_id, "This chat hasn't finished any movies! Add them with /watched."
+            )
+
+    elif command.startswith("/random"):
+        try:
+            count = command.split(" ")[1]
+        except IndexError:
+            count = 1
+
+        movie_list = movies.get_random(count)
+        if movie_list:
+            bot.sendMessage(chat_id, movie_list)
+        else:
+            bot.sendMessage(
+                chat_id,
+                "Not enough movies ({}) in movie list! Check with /list.".format(count),
             )
 
     # Mark a movie as watched
