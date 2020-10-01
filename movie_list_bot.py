@@ -24,6 +24,9 @@ COMMANDS = {
     "/help": "Show help for this bot",
 }
 
+BOT = telepot.Bot(KEY)
+
+
 
 class Movies:
     def __init__(self):
@@ -103,7 +106,7 @@ class Movies:
         return Movies.display(g["finished"][::-1])
 
 
-movies = Movies()
+MOVIES = Movies()
 
 
 def handle(msg):
@@ -120,31 +123,31 @@ def handle(msg):
         first_space = command.index(" ")
         movie_list = command[first_space + 1 :].strip()
         if not movie_list:
-            bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
+            BOT.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
             for movie in movie_list.split("\n"):
-                if movies.add_movie(chat_id, movie.strip()):
-                    bot.sendMessage(chat_id, "'{}' added to list".format(movie.strip()))
+                if MOVIES.add_movie(chat_id, movie.strip()):
+                    BOT.sendMessage(chat_id, "'{}' added to list".format(movie.strip()))
                 else:
-                    bot.sendMessage(
+                    BOT.sendMessage(
                         chat_id, "'{}' already on list".format(movie.strip())
                     )
 
     # Get the movie watchlist
     elif command.startswith("/list"):
-        ret = movies.list_movies(chat_id)
+        ret = MOVIES.list_movies(chat_id)
         if ret:
-            bot.sendMessage(chat_id, "Your list:\n{}".format(ret))
+            BOT.sendMessage(chat_id, "Your list:\n{}".format(ret))
         else:
-            bot.sendMessage(chat_id, "No movie list yet! Add movies with /add.")
+            BOT.sendMessage(chat_id, "No movie list yet! Add movies with /add.")
 
     # Get the list of finished movies
     elif command.startswith("/finished"):
-        ret = movies.finished_movies(chat_id)
+        ret = MOVIES.finished_movies(chat_id)
         if ret:
-            bot.sendMessage(chat_id, "You've watched: \n{}".format(ret))
+            BOT.sendMessage(chat_id, "You've watched: \n{}".format(ret))
         else:
-            bot.sendMessage(
+            BOT.sendMessage(
                 chat_id, "This chat hasn't finished any movies! Add them with /watched."
             )
 
@@ -154,11 +157,11 @@ def handle(msg):
         movie_list = command[first_space + 1 :].strip()
 
         if not movie_list:
-            bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
+            BOT.sendMessage(chat_id, "Make sure to include a movie title with /watched")
         else:
             for movie in movie_list.split("\n"):
-                movies.watched_a_movie(chat_id, movie)
-                bot.sendMessage(
+                MOVIES.watched_a_movie(chat_id, movie)
+                BOT.sendMessage(
                     chat_id, "Added '{}' to your finished list!".format(movie)
                 )
 
@@ -171,32 +174,30 @@ def handle(msg):
     elif command.startswith("/remove"):
         try:
             movie_num = int(command.split(" ")[1])
-            movie_name = movies.remove_movie(chat_id, movie_num)
+            movie_name = MOVIES.remove_movie(chat_id, movie_num)
             if movie_name:
-                bot.sendMessage(chat_id, "Removed '{}'".format(movie_name))
+                BOT.sendMessage(chat_id, "Removed '{}'".format(movie_name))
             else:
-                bot.sendMessage(
+                BOT.sendMessage(
                     chat_id,
                     "Not enough items in list (invalid number?): {}".format(movie_num),
                 )
         except IndexError, ValueError:
-            bot.sendMessage(chat_id, "/remove requires a list item's number.")
+            BOT.sendMessage(chat_id, "/remove requires a list item's number.")
 
     # help string
     elif command.startswith("/help"):
-        intro = "Movie List Bot! A bot for keeping track of movies to watch with your friends."
+        intro = "Movie List BOT! A BOT for keeping track of movies to watch with your friends."
         help_string = (
             intro
             + "\n"
             + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
         )
-        bot.sendMessage(chat_id, help_string)
+        BOT.sendMessage(chat_id, help_string)
 
 
 def main():
-    bot = telepot.Bot(KEY)
-
-    bot.message_loop(handle)
+    BOT.message_loop(handle)
     print("i'm listening yo")
 
     while True:
