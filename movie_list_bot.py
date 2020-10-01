@@ -1,10 +1,18 @@
 #!/venv/bin/python3
 
-import time, os
+import os
 import pickle
-import configparser
+import sys
+import time
+from pathlib import Path
+
 import telepot
 
+# local settings.py with KEY (received from BotFather)
+from settings import KEY
+
+
+BASE_DIR = os.path.dirname(Path(__file__).absolute())
 
 # help info
 COMMANDS = {
@@ -16,220 +24,192 @@ COMMANDS = {
     "/help": "Show help for this bot",
 }
 
+BOT = telepot.Bot(KEY)
 
-class Movies(object):
-    empty_chat = { 'list':[], 'finished':[] }
 
+
+class Movies:
     def __init__(self):
-        self.movies = {}
+        pass
 
-    def new_chat(self, chat_id):
-        self.movies[chat_id] = self.empty_chat
+    def _empty_chat():
+        return {"list": [], "finished": []}
+
+    def _read(self, chat_id):
+        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
+        if os.path.exists(f):
+            with open(f, "rb") as chatfile:
+                g = pickle.load(chatfile)
+                return g
+
+        return self._empty_chat()
+
+    def _update(self, chat_id, g):
+        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
+        try:
+            with open(f, "wb") as chatfile:
+                pickle.dump(g, chatfile)
+        except Exception as e:
+            print("Could not write chat to disk. Exiting.")
+            print(e)
+            sys.exit(1)
+
+    @staticmethod
+    def contains(g, target, movie):
+        assert target in ["list", "finished"]
+        try:
+            return list(map(lambda e: e.lower(), g[target])).index(movie.lower())
+        except ValueError:
+            return -1
+
+    @staticmethod
+    def display(movie_list):
+        return "\n".join(
+            ["{}: {}".format(idx + 1, movie) for idx, movie in enumerate(movie_list)]
+        )
 
     def add_movie(self, chat_id, movie):
-        f = os.path.join('chats',str(chat_id))
-
-        try:
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            if movie not in old_list['list']:
-                old_list['list'].append(movie)
-            else:
-                # movie already added
-                return -1
-
-            chatfile.close()
-            chatfile = open(f, 'wb')
-            pickle.dump( old_list, chatfile )
-            chatfile.close()
-
-            return 0
-
-        except (EOFError, IOError, FileNotFoundError) as e:
-            # file is empty
-            chatfile = open(f, 'wb')
-
-            g = {}
-            g['list'] = [movie]
-            g['finished'] = []
-
-            pickle.dump(g, chatfile)
-            chatfile.close()
-
-            return 0
+        g = self._read(chat_id)
+        if Movies.contains(g, "list", movie) == -1:
+            g["list"].append(movie)
+            self._update(chat_id, g)
+            return True
+        return False
 
     def remove_movie(self, chat_id, movienum):
-        f = os.path.join('chats',str(chat_id))
-
-        new_list = []
-        finished = []
-        with open(f, "rb") as chatfile:
-            g = pickle.load(chatfile)
-            finished = g["finished"]
-            new_list = list(map(
-                lambda e: e[1],
-                list(filter(lambda e: e[0] != int(movienum)-1, enumerate(g["list"])))
-            ))
-
-        with open(f, "wb") as chatfile:
-            g = {}
-            g["list"] = new_list
-            g["finished"] = finished
-            pickle.dump(g, chatfile)
-
-        return 0
+        g = self._read(chat_id)
+        try:
+            moviename = g["list"].pop(movienum - 1)
+            self._update(chat_id, g)
+            return moviename
+        except IndexError:
+            return ""
 
     def list_movies(self, chat_id):
-        try:
-            f = os.path.join('chats',str(chat_id))
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            chatfile.close()
-
-            ret = ''
-            for i in range(0, len(old_list['list'])):
-                ret += "{}: {}\n".format(i+1, old_list['list'][i])
-            return ret
-        except (IOError, EOFError) as e:
-            # chat doesn't have a list (or file is empty)
-            return -1
+        g = self._read(chat_id)
+        return Movies.display(g["list"])
 
     def watched_a_movie(self, chat_id, movie):
-        f = os.path.join('chats',str(chat_id))
+        g = self._read(chat_id)
 
-        try:
-            chatfile = open(f, 'rb')
+        idx = Movies.contains(g, "list", movie)
+        if idx >= 0:
+            g["list"].pop(idx)
 
-            g = pickle.load( chatfile )
-            old_list = g['list']
-            finished = g['finished']
-            if movie in old_list:
-                old_list.remove(movie)
-            if movie not in finished:
-                finished.append(movie)
+        if Movies.contains(g, "finished", movie) == -1:
+            g["finished"].append(movie)
 
-            chatfile.close()
-            chatfile = open(f, 'wb')
-            pickle.dump(g, chatfile)
-            chatfile.close()
+        self._update(chat_id, g)
 
-        except (EOFError, IOError, FileNotFoundError) as e:
-            # file is empty (what?)
-            chatfile = open(f, 'wb')
-
-            g = {}
-            g['list'] = []
-            g['finished'] = [movie]
-
-            pickle.dump(g, chatfile)
-            chatfile.close()
-
-            return 0
-        
     def finished_movies(self, chat_id):
-        try:
-            f = os.path.join('chats',str(chat_id))
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            chatfile.close()
-
-            finished = old_list["finished"][::-1]
-            return "\n".join([
-                "{}: {}".format(e[0]+1, e[1]) for e in enumerate(finished)
-            ])
-        except (IOError, EOFError) as e:
-            # chat doesn't have a list (or file is empty)
-            return -1
+        g = self._read(chat_id)
+        return Movies.display(g["finished"][::-1])
 
 
-movies = Movies()
+MOVIES = Movies()
+
 
 def handle(msg):
     if not ("text" in msg and any(msg["text"].startswith(k) for k in COMMANDS)):
         return
 
-    chat_id = msg['chat']['id']
-    command = msg['text']
+    chat_id = msg["chat"]["id"]
+    command = msg["text"]
 
     print("got command: {}".format(command))
 
     # Add a movie to the watchlist (creates the group if it didn't exist yet)
-    if command[:4] == '/add':
-        first_space = command.index(' ')
-        moviename = command[first_space+1:]
-        if not moviename.strip():
-            bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
-        else:
-            for movie in moviename.split("\n"):
-                ret = movies.add_movie(chat_id, movie)
+    if command.startswith("/add"):
+        try:
+            first_space = command.index(" ")
+            movie_list = command[first_space + 1 :].strip()
+        except ValueError:
+            movie_list = None
 
-                if ret == 0:
-                    bot.sendMessage(chat_id, "{} added to list".format(movie))
+        if not movie_list:
+            BOT.sendMessage(chat_id, "Make sure to include a movie title with /add")
+        else:
+            for movie in movie_list.split("\n"):
+                if MOVIES.add_movie(chat_id, movie.strip()):
+                    BOT.sendMessage(chat_id, "'{}' added to list".format(movie.strip()))
                 else:
-                    bot.sendMessage(chat_id, "{} already on list".format(movie))
+                    BOT.sendMessage(
+                        chat_id, "'{}' already on list".format(movie.strip())
+                    )
 
     # Get the movie watchlist
-    elif command[:5] == '/list':
-        ret = movies.list_movies(chat_id)
-        if ret == -1 or (isinstance(ret, str) and not ret):
-            bot.sendMessage(chat_id, "No movie list yet! Add movies with /add")
+    elif command.startswith("/list"):
+        ret = MOVIES.list_movies(chat_id)
+        if ret:
+            BOT.sendMessage(chat_id, "Your list:\n{}".format(ret))
         else:
-            bot.sendMessage(chat_id, "Your list:\n{}".format(ret))
+            BOT.sendMessage(chat_id, "No movie list yet! Add movies with /add.")
 
     # Get the list of finished movies
-    elif command[:9] == '/finished':
-        ret = movies.finished_movies(chat_id)
-        if ret == -1:
-            bot.sendMessage(chat_id, "This chat finished any movies!")
+    elif command.startswith("/finished"):
+        ret = MOVIES.finished_movies(chat_id)
+        if ret:
+            BOT.sendMessage(chat_id, "You've watched: \n{}".format(ret))
         else:
-            if not ret.strip():
-                bot.sendMessage(chat_id, "You haven't watched any movies yet! Add them with /watched")
-            else:
-                bot.sendMessage(chat_id, "You've watched: \n{}".format(ret))
+            BOT.sendMessage(
+                chat_id, "This chat hasn't finished any movies! Add them with /watched."
+            )
 
     # Mark a movie as watched
-    elif command[:8] == '/watched':
-        first_space = command.index(' ')
-        moviename = command[first_space+1:]
+    elif command.startswith("/watched"):
+        try:
+            first_space = command.index(" ")
+            movie_list = command[first_space + 1 :].strip()
+        except ValueError:
+            movie_list = None
 
-        if not moviename.strip():
-            bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
+        if not movie_list:
+            BOT.sendMessage(chat_id, "Make sure to include a movie title with /watched")
         else:
-            for movie in moviename.split("\n"):
-                movies.watched_a_movie(chat_id, movie)
-                bot.sendMessage(chat_id, "Added {} to your finished list!".format(movie))
+            for movie in movie_list.split("\n"):
+                MOVIES.watched_a_movie(chat_id, movie)
+                BOT.sendMessage(
+                    chat_id, "Added '{}' to your finished list!".format(movie)
+                )
 
-    elif command[:7] == '/modify':
-        first_space = command.index(' ')
-        movienum = command[first_space+1:]
+    elif command.startswith("/modify"):
+        first_space = command.index(" ")
+        movienum = command[first_space + 1 :]
 
         pass
 
     elif command.startswith("/remove"):
         try:
-            movie_num = command.split(" ")[1]
-            movies.remove_movie(chat_id, movie_num)
-            bot.sendMessage(chat_id, "removed {}".format(movie_num))
-        except IndexError:
-            bot.sendMessage(chat_id, "/remove endpoint requires a number.")
+            movie_num = int(command.split(" ")[1])
+            movie_name = MOVIES.remove_movie(chat_id, movie_num)
+            if movie_name:
+                BOT.sendMessage(chat_id, "Removed '{}'".format(movie_name))
+            else:
+                BOT.sendMessage(
+                    chat_id,
+                    "Not enough items in list (invalid number?): {}".format(movie_num),
+                )
+        except (IndexError, ValueError):
+            BOT.sendMessage(chat_id, "/remove requires a list item's number.")
 
     # help string
-    elif command[:5] == '/help':
-        intro = "Movie List Bot! A bot for keeping track of movies to watch with your friends."
-        help_string = intro + "\n" + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
-        bot.sendMessage(chat_id, help_string)
+    elif command.startswith("/help"):
+        intro = "Movie List BOT! A BOT for keeping track of movies to watch with your friends."
+        help_string = (
+            intro
+            + "\n"
+            + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
+        )
+        BOT.sendMessage(chat_id, help_string)
 
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-key = config['DEFAULT']['key']
-bot = telepot.Bot(key)
+def main():
+    BOT.message_loop(handle)
+    print("i'm listening yo")
 
-bot.message_loop(handle)
-print("i'm listening yo")
+    while True:
+        time.sleep(10)
 
-while 1:
-    time.sleep(10)
+
+if __name__ == "__main__":
+    main()
