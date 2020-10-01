@@ -109,8 +109,8 @@ class Movies:
 
     def get_random(self, chat_id, count):
         g = self._read(chat_id)
-        movie_list = random.shuffle(g["list"])[:count]
-        return movie_list
+        random.shuffle(g["list"])
+        return Movies.display(g["list"][:count])
 
 
 MOVIES = Movies()
@@ -164,15 +164,18 @@ def handle(msg):
 
     elif command.startswith("/random"):
         try:
-            count = command.split(" ")[1]
+            count = int(command.split(" ")[1])
+        except ValueError:
+            BOT.sendMessage(chat_id, "Argument `n` must be an integer")
+            return
         except IndexError:
             count = 1
 
-        movie_list = movies.get_random(count)
+        movie_list = MOVIES.get_random(chat_id, count)
         if movie_list:
-            bot.sendMessage(chat_id, movie_list)
+            BOT.sendMessage(chat_id, movie_list)
         else:
-            bot.sendMessage(
+            BOT.sendMessage(
                 chat_id,
                 "Not enough movies ({}) in movie list! Check with /list.".format(count),
             )
