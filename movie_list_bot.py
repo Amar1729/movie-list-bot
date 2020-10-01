@@ -52,7 +52,10 @@ class Movies:
     @staticmethod
     def contains(g, target, movie):
         assert target in ["list", "finished"]
-        return movie.lower() in map(lambda e: e.lower(), g[target])
+        try:
+            return list(map(lambda e: e.lower(), g[target])).index(movie.lower())
+        except ValueError:
+            return -1
 
     @staticmethod
     def display(movie_list):
@@ -63,7 +66,7 @@ class Movies:
 
     def add_movie(self, chat_id, movie):
         g = self._read(chat_id)
-        if not Movies.contains(g, "list", movie):
+        if Movies.contains(g, "list", movie) == -1:
             g["list"].append(movie)
             self._update(chat_id, g)
             return True
