@@ -1,10 +1,16 @@
 #!/venv/bin/python3
 
-import time, os
-import pickle
 import configparser
+import os
+import pickle
+import sys
+import time
+from pathlib import Path
+
 import telepot
 
+
+BASE_DIR = os.path.dirname(Path(__file__).absolute())
 
 # help info
 COMMANDS = {
@@ -17,47 +23,44 @@ COMMANDS = {
 }
 
 
-class Movies(object):
-    empty_chat = { 'list':[], 'finished':[] }
-
+class Movies:
     def __init__(self):
-        self.movies = {}
+        pass
 
-    def new_chat(self, chat_id):
-        self.movies[chat_id] = self.empty_chat
+    def _empty_chat():
+        return {"list":[], "finished":[]}
+
+    def _read(self, chat_id):
+        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
+        if os.path.exists(f):
+            with open(f, "rb") as chatfile:
+                g = pickle.load(chatfile)
+                return g
+
+        return self._empty_chat()
+
+    def _update(self, chat_id, g):
+        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
+        try:
+            with open(f, "wb") as chatfile:
+                pickle.dump(g, chatfile)
+        except Exception as e:
+            print("Could not write chat to disk. Exiting.")
+            print(e)
+            sys.exit(1)
+
+    @staticmethod
+    def contains(g, target, movie):
+        assert target in ["list", "finished"]
+        return movie.lower() in map(lambda e: e.lower(), g[target])
 
     def add_movie(self, chat_id, movie):
-        f = os.path.join('chats',str(chat_id))
-
-        try:
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            if movie not in old_list['list']:
-                old_list['list'].append(movie)
-            else:
-                # movie already added
-                return -1
-
-            chatfile.close()
-            chatfile = open(f, 'wb')
-            pickle.dump( old_list, chatfile )
-            chatfile.close()
-
-            return 0
-
-        except (EOFError, IOError, FileNotFoundError) as e:
-            # file is empty
-            chatfile = open(f, 'wb')
-
-            g = {}
-            g['list'] = [movie]
-            g['finished'] = []
-
-            pickle.dump(g, chatfile)
-            chatfile.close()
-
-            return 0
+        g = self._read(chat_id)
+        if not Movies.contains(g, "list", movie):
+            g["list"].append(movie)
+            self._update(chat_id, g)
+            return True
+        return False
 
     def remove_movie(self, chat_id, movienum):
         f = os.path.join('chats',str(chat_id))
@@ -159,17 +162,15 @@ def handle(msg):
     # Add a movie to the watchlist (creates the group if it didn't exist yet)
     if command[:4] == '/add':
         first_space = command.index(' ')
-        moviename = command[first_space+1:]
-        if not moviename.strip():
+        moviename = command[first_space+1:].strip()
+        if not moviename:
             bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
             for movie in moviename.split("\n"):
-                ret = movies.add_movie(chat_id, movie)
-
-                if ret == 0:
-                    bot.sendMessage(chat_id, "{} added to list".format(movie))
+                if movies.add_movie(chat_id, movie.strip()):
+                    bot.sendMessage(chat_id, "'{}' added to list".format(movie.strip()))
                 else:
-                    bot.sendMessage(chat_id, "{} already on list".format(movie))
+                    bot.sendMessage(chat_id, "'{}' already on list".format(movie.strip()))
 
     # Get the movie watchlist
     elif command[:5] == '/list':
