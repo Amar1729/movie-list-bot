@@ -5,6 +5,18 @@ import pickle
 import configparser
 import telepot
 
+
+# help info
+COMMANDS = {
+    "/add": "Add a movie to your watchlist",
+    "/list": "List of movies to watch",
+    "/remove": "Remove a a movie from your watchlist (by number)",
+    "/watched": "Tell movie_list_bot you've watched this movie (and remove it from your watchlist)",
+    "/finished": "List of movies your group has finished",
+    "/help": "Show help for this bot",
+}
+
+
 class Movies(object):
     empty_chat = { 'list':[], 'finished':[] }
 
@@ -112,14 +124,6 @@ class Movies(object):
             return -1
 
 
-
-# help info
-help_string = " Movie List Bot! A bot for keeping track of movies to watch with your friends. \n\
-/add        Add a movie to your watchlist \n\
-/list       List of movies to watch \n\
-/watched    Tell movie_list_bot you've watched this movie (and remove it from your watchlist) \n\
-/finished   List of movies your group has finished "
-
 movies = Movies()
 
 def handle(msg):
@@ -180,6 +184,8 @@ def handle(msg):
 
     # help string
     elif command[:5] == '/help':
+        intro = "Movie List Bot! A bot for keeping track of movies to watch with your friends."
+        help_string = intro + "\n" + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
         bot.sendMessage(chat_id, help_string)
 
 
