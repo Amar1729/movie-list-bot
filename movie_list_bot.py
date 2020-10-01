@@ -114,17 +114,19 @@ def handle(msg):
     print("got command: {}".format(command))
 
     # Add a movie to the watchlist (creates the group if it didn't exist yet)
-    if command[:4] == '/add':
-        first_space = command.index(' ')
-        moviename = command[first_space+1:].strip()
-        if not moviename:
+    if command.startswith("/add"):
+        first_space = command.index(" ")
+        movie_list = command[first_space + 1 :].strip()
+        if not movie_list:
             bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
-            for movie in moviename.split("\n"):
+            for movie in movie_list.split("\n"):
                 if movies.add_movie(chat_id, movie.strip()):
                     bot.sendMessage(chat_id, "'{}' added to list".format(movie.strip()))
                 else:
-                    bot.sendMessage(chat_id, "'{}' already on list".format(movie.strip()))
+                    bot.sendMessage(
+                        chat_id, "'{}' already on list".format(movie.strip())
+                    )
 
     # Get the movie watchlist
     elif command.startswith("/list"):
@@ -140,21 +142,25 @@ def handle(msg):
         if ret:
             bot.sendMessage(chat_id, "You've watched: \n{}".format(ret))
         else:
-            bot.sendMessage(chat_id, "This chat hasn't finished any movies! Add them with /watched.")
+            bot.sendMessage(
+                chat_id, "This chat hasn't finished any movies! Add them with /watched."
+            )
 
     # Mark a movie as watched
-    elif command[:8] == '/watched':
-        first_space = command.index(' ')
-        moviename = command[first_space+1:]
+    elif command.startswith("/watched"):
+        first_space = command.index(" ")
+        movie_list = command[first_space+1:].strip()
 
-        if not moviename.strip():
+        if not movie_list:
             bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
         else:
-            for movie in moviename.split("\n"):
+            for movie in movie_list.split("\n"):
                 movies.watched_a_movie(chat_id, movie)
-                bot.sendMessage(chat_id, "Added {} to your finished list!".format(movie))
+                bot.sendMessage(
+                    chat_id, "Added '{}' to your finished list!".format(movie)
+                )
 
-    elif command[:7] == '/modify':
+    elif command.startswith('/modify'):
         first_space = command.index(' ')
         movienum = command[first_space+1:]
 
@@ -169,15 +175,19 @@ def handle(msg):
             else:
                 bot.sendMessage(
                     chat_id,
-                    "Not enough items in list (invalid number?): {}".format(movie_num)
+                    "Not enough items in list (invalid number?): {}".format(movie_num),
                 )
         except IndexError, ValueError:
             bot.sendMessage(chat_id, "/remove requires a list item's number.")
 
     # help string
-    elif command[:5] == '/help':
+    elif command.startswith("/help"):
         intro = "Movie List Bot! A bot for keeping track of movies to watch with your friends."
-        help_string = intro + "\n" + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
+        help_string = (
+            intro
+            + "\n"
+            + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
+        )
         bot.sendMessage(chat_id, help_string)
 
 
