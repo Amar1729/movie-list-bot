@@ -30,7 +30,7 @@ class Movies:
         pass
 
     def _empty_chat():
-        return {"list":[], "finished":[]}
+        return {"list": [], "finished": []}
 
     def _read(self, chat_id):
         f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
@@ -61,10 +61,9 @@ class Movies:
 
     @staticmethod
     def display(movie_list):
-        return "\n".join([
-            "{}: {}".format(idx+1, movie)
-            for idx, movie in enumerate(movie_list)
-        ])
+        return "\n".join(
+            ["{}: {}".format(idx + 1, movie) for idx, movie in enumerate(movie_list)]
+        )
 
     def add_movie(self, chat_id, movie):
         g = self._read(chat_id)
@@ -77,7 +76,7 @@ class Movies:
     def remove_movie(self, chat_id, movienum):
         g = self._read(chat_id)
         try:
-            moviename = g["list"].pop(movienum-1)
+            moviename = g["list"].pop(movienum - 1)
             self._update(chat_id, g)
             return moviename
         except IndexError:
@@ -98,7 +97,7 @@ class Movies:
             g["finished"].append(movie)
 
         self._update(chat_id, g)
-        
+
     def finished_movies(self, chat_id):
         g = self._read(chat_id)
         return Movies.display(g["finished"][::-1])
@@ -106,12 +105,13 @@ class Movies:
 
 movies = Movies()
 
+
 def handle(msg):
     if not ("text" in msg and any(msg["text"].startswith(k) for k in COMMANDS)):
         return
 
-    chat_id = msg['chat']['id']
-    command = msg['text']
+    chat_id = msg["chat"]["id"]
+    command = msg["text"]
 
     print("got command: {}".format(command))
 
@@ -151,7 +151,7 @@ def handle(msg):
     # Mark a movie as watched
     elif command.startswith("/watched"):
         first_space = command.index(" ")
-        movie_list = command[first_space+1:].strip()
+        movie_list = command[first_space + 1 :].strip()
 
         if not movie_list:
             bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
@@ -162,9 +162,9 @@ def handle(msg):
                     chat_id, "Added '{}' to your finished list!".format(movie)
                 )
 
-    elif command.startswith('/modify'):
-        first_space = command.index(' ')
-        movienum = command[first_space+1:]
+    elif command.startswith("/modify"):
+        first_space = command.index(" ")
+        movienum = command[first_space + 1 :]
 
         pass
 
