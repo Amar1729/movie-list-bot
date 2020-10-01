@@ -152,7 +152,7 @@ def handle(msg):
     # Get the movie watchlist
     elif command[:5] == '/list':
         ret = movies.list_movies(chat_id)
-        if ret == -1:
+        if ret == -1 or (isinstance(ret, str) and not ret):
             bot.sendMessage(chat_id, "No movie list yet! Add movies with /add")
         else:
             bot.sendMessage(chat_id, "Your list:\n{}".format(ret))
