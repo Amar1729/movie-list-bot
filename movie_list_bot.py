@@ -5,6 +5,18 @@ import pickle
 import configparser
 import telepot
 
+
+# help info
+COMMANDS = {
+    "/add": "Add a movie to your watchlist",
+    "/list": "List of movies to watch",
+    "/remove": "Remove a a movie from your watchlist (by number)",
+    "/watched": "Tell movie_list_bot you've watched this movie (and remove it from your watchlist)",
+    "/finished": "List of movies your group has finished",
+    "/help": "Show help for this bot",
+}
+
+
 class Movies(object):
     empty_chat = { 'list':[], 'finished':[] }
 
@@ -46,6 +58,27 @@ class Movies(object):
             chatfile.close()
 
             return 0
+
+    def remove_movie(self, chat_id, movienum):
+        f = os.path.join('chats',str(chat_id))
+
+        new_list = []
+        finished = []
+        with open(f, "rb") as chatfile:
+            g = pickle.load(chatfile)
+            finished = g["finished"]
+            new_list = list(map(
+                lambda e: e[1],
+                list(filter(lambda e: e[0] != int(movienum)-1, enumerate(g["list"])))
+            ))
+
+        with open(f, "wb") as chatfile:
+            g = {}
+            g["list"] = new_list
+            g["finished"] = finished
+            pickle.dump(g, chatfile)
+
+        return 0
 
     def list_movies(self, chat_id):
         try:
@@ -103,26 +136,21 @@ class Movies(object):
             old_list = pickle.load( chatfile )
             chatfile.close()
 
-            ret = ''
-            for i in range(0, len(old_list['finished'])):
-                ret += "{}: {}\n".format(i+1, old_list['finished'][i])
-            return ret
+            finished = old_list["finished"][::-1]
+            return "\n".join([
+                "{}: {}".format(e[0]+1, e[1]) for e in enumerate(finished)
+            ])
         except (IOError, EOFError) as e:
             # chat doesn't have a list (or file is empty)
             return -1
 
 
-
-# help info
-help_string = " Movie List Bot! A bot for keeping track of movies to watch with your friends. \n\
-/add        Add a movie to your watchlist \n\
-/list       List of movies to watch \n\
-/watched    Tell movie_list_bot you've watched this movie (and remove it from your watchlist) \n\
-/finished   List of movies your group has finished "
-
 movies = Movies()
 
 def handle(msg):
+    if not ("text" in msg and any(msg["text"].startswith(k) for k in COMMANDS)):
+        return
+
     chat_id = msg['chat']['id']
     command = msg['text']
 
@@ -135,17 +163,18 @@ def handle(msg):
         if not moviename.strip():
             bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
-            ret = movies.add_movie(chat_id, moviename)
+            for movie in moviename.split("\n"):
+                ret = movies.add_movie(chat_id, movie)
 
-            if ret == 0:
-                bot.sendMessage(chat_id, "{} added to list".format(moviename))
-            else:
-                bot.sendMessage(chat_id, "{} already on list".format(moviename))
+                if ret == 0:
+                    bot.sendMessage(chat_id, "{} added to list".format(movie))
+                else:
+                    bot.sendMessage(chat_id, "{} already on list".format(movie))
 
     # Get the movie watchlist
     elif command[:5] == '/list':
         ret = movies.list_movies(chat_id)
-        if ret == -1:
+        if ret == -1 or (isinstance(ret, str) and not ret):
             bot.sendMessage(chat_id, "No movie list yet! Add movies with /add")
         else:
             bot.sendMessage(chat_id, "Your list:\n{}".format(ret))
@@ -169,8 +198,9 @@ def handle(msg):
         if not moviename.strip():
             bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
         else:
-            movies.watched_a_movie(chat_id, moviename)
-            bot.sendMessage(chat_id, "Added {} to your finished list!".format(moviename))
+            for movie in moviename.split("\n"):
+                movies.watched_a_movie(chat_id, movie)
+                bot.sendMessage(chat_id, "Added {} to your finished list!".format(movie))
 
     elif command[:7] == '/modify':
         first_space = command.index(' ')
@@ -178,8 +208,18 @@ def handle(msg):
 
         pass
 
+    elif command.startswith("/remove"):
+        try:
+            movie_num = command.split(" ")[1]
+            movies.remove_movie(chat_id, movie_num)
+            bot.sendMessage(chat_id, "removed {}".format(movie_num))
+        except IndexError:
+            bot.sendMessage(chat_id, "/remove endpoint requires a number.")
+
     # help string
     elif command[:5] == '/help':
+        intro = "Movie List Bot! A bot for keeping track of movies to watch with your friends."
+        help_string = intro + "\n" + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
         bot.sendMessage(chat_id, help_string)
 
 
