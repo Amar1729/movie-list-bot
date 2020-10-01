@@ -142,12 +142,13 @@ def handle(msg):
         if not moviename.strip():
             bot.sendMessage(chat_id, "Make sure to include a movie title with /add")
         else:
-            ret = movies.add_movie(chat_id, moviename)
+            for movie in moviename.split("\n"):
+                ret = movies.add_movie(chat_id, movie)
 
-            if ret == 0:
-                bot.sendMessage(chat_id, "{} added to list".format(moviename))
-            else:
-                bot.sendMessage(chat_id, "{} already on list".format(moviename))
+                if ret == 0:
+                    bot.sendMessage(chat_id, "{} added to list".format(movie))
+                else:
+                    bot.sendMessage(chat_id, "{} already on list".format(movie))
 
     # Get the movie watchlist
     elif command[:5] == '/list':
@@ -176,8 +177,9 @@ def handle(msg):
         if not moviename.strip():
             bot.sendMessage(chat_id, "Make sure to include a movie title with /watched")
         else:
-            movies.watched_a_movie(chat_id, moviename)
-            bot.sendMessage(chat_id, "Added {} to your finished list!".format(moviename))
+            for movie in moviename.split("\n"):
+                movies.watched_a_movie(chat_id, movie)
+                bot.sendMessage(chat_id, "Added {} to your finished list!".format(movie))
 
     elif command[:7] == '/modify':
         first_space = command.index(' ')
