@@ -127,6 +127,9 @@ class Movies(object):
 movies = Movies()
 
 def handle(msg):
+    if not ("text" in msg and any(msg["text"].startswith(k) for k in COMMANDS)):
+        return
+
     chat_id = msg['chat']['id']
     command = msg['text']
 
