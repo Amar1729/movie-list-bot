@@ -59,6 +59,27 @@ class Movies(object):
 
             return 0
 
+    def remove_movie(self, chat_id, movienum):
+        f = os.path.join('chats',str(chat_id))
+
+        new_list = []
+        finished = []
+        with open(f, "rb") as chatfile:
+            g = pickle.load(chatfile)
+            finished = g["finished"]
+            new_list = list(map(
+                lambda e: e[1],
+                list(filter(lambda e: e[0] != int(movienum)-1, enumerate(g["list"])))
+            ))
+
+        with open(f, "wb") as chatfile:
+            g = {}
+            g["list"] = new_list
+            g["finished"] = finished
+            pickle.dump(g, chatfile)
+
+        return 0
+
     def list_movies(self, chat_id):
         try:
             f = os.path.join('chats',str(chat_id))
@@ -186,6 +207,14 @@ def handle(msg):
         movienum = command[first_space+1:]
 
         pass
+
+    elif command.startswith("/remove"):
+        try:
+            movie_num = command.split(" ")[1]
+            movies.remove_movie(chat_id, movie_num)
+            bot.sendMessage(chat_id, "removed {}".format(movie_num))
+        except IndexError:
+            bot.sendMessage(chat_id, "/remove endpoint requires a number.")
 
     # help string
     elif command[:5] == '/help':
