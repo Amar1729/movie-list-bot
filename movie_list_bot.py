@@ -54,6 +54,13 @@ class Movies:
         assert target in ["list", "finished"]
         return movie.lower() in map(lambda e: e.lower(), g[target])
 
+    @staticmethod
+    def display(movie_list):
+        return "\n".join([
+            "{}: {}".format(idx+1, movie)
+            for idx, movie in enumerate(movie_list)
+        ])
+
     def add_movie(self, chat_id, movie):
         g = self._read(chat_id)
         if not Movies.contains(g, "list", movie):
@@ -84,20 +91,8 @@ class Movies:
         return 0
 
     def list_movies(self, chat_id):
-        try:
-            f = os.path.join('chats',str(chat_id))
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            chatfile.close()
-
-            ret = ''
-            for i in range(0, len(old_list['list'])):
-                ret += "{}: {}\n".format(i+1, old_list['list'][i])
-            return ret
-        except (IOError, EOFError) as e:
-            # chat doesn't have a list (or file is empty)
-            return -1
+        g = self._read(chat_id)
+        return Movies.display(g["list"])
 
     def watched_a_movie(self, chat_id, movie):
         f = os.path.join('chats',str(chat_id))
@@ -132,20 +127,8 @@ class Movies:
             return 0
         
     def finished_movies(self, chat_id):
-        try:
-            f = os.path.join('chats',str(chat_id))
-            chatfile = open(f, 'rb')
-
-            old_list = pickle.load( chatfile )
-            chatfile.close()
-
-            finished = old_list["finished"][::-1]
-            return "\n".join([
-                "{}: {}".format(e[0]+1, e[1]) for e in enumerate(finished)
-            ])
-        except (IOError, EOFError) as e:
-            # chat doesn't have a list (or file is empty)
-            return -1
+        g = self._read(chat_id)
+        return Movies.display(g["finished"][::-1])
 
 
 movies = Movies()
@@ -173,23 +156,20 @@ def handle(msg):
                     bot.sendMessage(chat_id, "'{}' already on list".format(movie.strip()))
 
     # Get the movie watchlist
-    elif command[:5] == '/list':
+    elif command.startswith("/list"):
         ret = movies.list_movies(chat_id)
-        if ret == -1 or (isinstance(ret, str) and not ret):
-            bot.sendMessage(chat_id, "No movie list yet! Add movies with /add")
-        else:
+        if ret:
             bot.sendMessage(chat_id, "Your list:\n{}".format(ret))
+        else:
+            bot.sendMessage(chat_id, "No movie list yet! Add movies with /add.")
 
     # Get the list of finished movies
-    elif command[:9] == '/finished':
+    elif command.startswith("/finished"):
         ret = movies.finished_movies(chat_id)
-        if ret == -1:
-            bot.sendMessage(chat_id, "This chat finished any movies!")
+        if ret:
+            bot.sendMessage(chat_id, "You've watched: \n{}".format(ret))
         else:
-            if not ret.strip():
-                bot.sendMessage(chat_id, "You haven't watched any movies yet! Add them with /watched")
-            else:
-                bot.sendMessage(chat_id, "You've watched: \n{}".format(ret))
+            bot.sendMessage(chat_id, "This chat hasn't finished any movies! Add them with /watched.")
 
     # Mark a movie as watched
     elif command[:8] == '/watched':
