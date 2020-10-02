@@ -128,7 +128,7 @@ class Movies:
 
     def finished_movies(self, chat_id):
         g = self._read(chat_id)
-        return Movies.display(g["finished"][::-1])
+        return Movies.display(g["finished"])
 
     def get_random(self, chat_id, count):
         g = self._read(chat_id)
