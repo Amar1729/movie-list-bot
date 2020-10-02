@@ -140,6 +140,28 @@ def list_add(update, context):
             update.message.reply_text("'{}' already on list".format(movie.strip()))
 
 
+def list_list(update, context):
+    chat_id = update.message.chat_id
+
+    ret = MOVIES.list_movies(chat_id)
+    if ret:
+        update.message.reply_text("Your list:\n{}".format(ret))
+    else:
+        update.message.reply_text("No movie list yet! Add movies with /add.")
+
+
+def finished_list(update, context):
+    chat_id = update.message.chat_id
+
+    ret = MOVIES.finished_movies(chat_id)
+    if ret:
+        update.message.reply_text("You've watched: \n{}".format(ret))
+    else:
+        update.message.reply_text(
+            "This chat hasn't finished any movies! Add them with /watched."
+        )
+
+
 def handle(msg):
     if not ("text" in msg and any(msg["text"].startswith(k) for k in COMMANDS)):
         return
@@ -256,6 +278,8 @@ def main():
     updater = Updater(KEY, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("list", list_list))
+    updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
 
     updater.start_polling()
 
