@@ -176,6 +176,26 @@ def list_list(update, context):
         update.message.reply_text("No movie list yet! Add movies with /add.")
 
 
+def list_random(update, context):
+    chat_id = update.message.chat_id
+
+    try:
+        count = int(context.args[0])
+    except ValueError:
+        update.message.reply_text("Usage: /random [<number>]")
+        # count = 1
+        return
+    except IndexError:
+        count = 1
+
+    movie_list = MOVIES.get_random(chat_id, count)
+    if movie_list:
+        update.message.reply_text(movie_list)
+    else:
+        update.message.reply_text(
+            "Not enough movies ({}) in movie list! Check with /list.".format(count),
+        )
+
 def finished_list(update, context):
     chat_id = update.message.chat_id
 
@@ -306,6 +326,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("list", list_list))
+    updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
 
     updater.start_polling()
