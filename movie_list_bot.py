@@ -31,11 +31,17 @@ COMMANDS = {
     "/add": "Add a movie to your watchlist",
     "/list": "List of movies to watch",
     "/remove": "Remove a a movie from your watchlist (by number)",
-    "/random": "Get __n__ random movies from your list (default returns only one)",
+    "/random": "Get `n` random movies from your list (default returns only one)",
     "/watched": "Tell movie_list_bot you've watched this movie (and remove it from your watchlist)",
     "/finished": "List of movies your group has finished",
     "/help": "Show help for this bot",
 }
+
+INTRO = "Movie List Bot! A bot for keeping track of movies to watch with your friends.\n"
+HELP_STRING = (
+    INTRO
+    + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
+)
 
 BOT = telepot.Bot(KEY)
 
@@ -136,6 +142,10 @@ def _remove_wrapper(chat_id, count: int) -> Tuple[bool, str]:
             False,
             "Not enough items in list (invalid number?): {}".format(count),
         )
+
+
+def _help(update, context):
+    update.message.reply_text(HELP_STRING)
 
 
 def list_add(update, context):
@@ -323,6 +333,7 @@ def handle(msg):
 def main():
     updater = Updater(KEY, use_context=True)
 
+    updater.dispatcher.add_handler(CommandHandler("help", _help))
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("list", list_list))
