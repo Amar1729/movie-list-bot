@@ -7,6 +7,7 @@ import random
 import sys
 import time
 from pathlib import Path
+from typing import Tuple
 
 import telepot
 
@@ -126,6 +127,17 @@ class Movies:
 MOVIES = Movies()
 
 
+def _remove_wrapper(chat_id, count: int) -> Tuple[bool, str]:
+    movie_name = MOVIES.remove_movie(chat_id, count)
+    if movie_name:
+        return (True, movie_name)
+    else:
+        return (
+            False,
+            "Not enough items in list (invalid number?): {}".format(count),
+        )
+
+
 def list_add(update, context):
     chat_id = update.message.chat_id
 
@@ -139,6 +151,20 @@ def list_add(update, context):
         else:
             update.message.reply_text("'{}' already on list".format(movie.strip()))
 
+
+def list_remove(update, context):
+    chat_id = update.message.chat_id
+
+    try:
+        count = int(context.args[0])
+    except (IndexError, ValueError):
+        update.message.reply_text("Usage: /remove <list index>")
+        return
+
+    ret, text = _remove_wrapper(chat_id, count)
+    if ret:
+        text = "Removed: " + text
+    update.message.reply_text(text)
 
 def list_list(update, context):
     chat_id = update.message.chat_id
@@ -278,6 +304,7 @@ def main():
     updater = Updater(KEY, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("list", list_list))
     updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
 
