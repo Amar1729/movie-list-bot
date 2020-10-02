@@ -143,17 +143,6 @@ class Movies:
 MOVIES = Movies()
 
 
-def _remove_wrapper(chat_id, count: int) -> Tuple[bool, str]:
-    movie_name = MOVIES.remove_movie(chat_id, count)
-    if movie_name:
-        return (True, movie_name)
-    else:
-        return (
-            False,
-            "Not enough items in list (invalid number?): {}".format(count),
-        )
-
-
 def _help(update, context):
     update.message.reply_text(HELP_STRING)
 
@@ -181,9 +170,11 @@ def list_remove(update, context):
         update.message.reply_text("Usage: /remove <list index>")
         return
 
-    ret, text = _remove_wrapper(chat_id, count)
-    if ret:
-        text = "Removed: " + text
+    movie = MOVIES.remove_movie(chat_id, count)
+    if movie:
+        text = "Removed: " + movie
+    else:
+        text = "Not enough items in list (invalid number?): {}".format(count)
     update.message.reply_text(text)
 
 def list_list(update, context):
