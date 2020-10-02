@@ -1,5 +1,6 @@
 #!/venv/bin/python3
 
+import logging
 import os
 import pickle
 import random
@@ -9,9 +10,18 @@ from pathlib import Path
 
 import telepot
 
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
 
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
+LOGGER = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(Path(__file__).absolute())
 
@@ -114,6 +124,20 @@ class Movies:
 
 
 MOVIES = Movies()
+
+
+def list_add(update, context):
+    chat_id = update.message.chat_id
+
+    if not context.args:
+        update.message.reply_text("Usage: /add <movie title> [# <movie title> ...]")
+        return
+
+    for movie in " ".join(context.args).split(" # "):
+        if MOVIES.add_movie(chat_id, movie.strip()):
+            update.message.reply_text("'{}' added to list".format(movie.strip()))
+        else:
+            update.message.reply_text("'{}' already on list".format(movie.strip()))
 
 
 def handle(msg):
@@ -229,11 +253,13 @@ def handle(msg):
 
 
 def main():
-    BOT.message_loop(handle)
-    print("i'm listening yo")
+    updater = Updater(KEY, use_context=True)
 
-    while True:
-        time.sleep(10)
+    updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
+
+    updater.start_polling()
+
+    updater.idle()
 
 
 if __name__ == "__main__":
