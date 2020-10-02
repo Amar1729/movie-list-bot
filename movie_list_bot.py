@@ -108,17 +108,27 @@ class Movies:
         g = self._read(chat_id)
         return Movies.display(g["list"])
 
-    def watched_a_movie(self, chat_id, movie):
+    def add_to_watched(self, chat_id, movie):
         g = self._read(chat_id)
-
-        idx = Movies.contains(g, "list", movie)
-        if idx >= 0:
-            g["list"].pop(idx)
 
         if Movies.contains(g, "finished", movie) == -1:
             g["finished"].append(movie)
 
         self._update(chat_id, g)
+
+    def watched_a_movie(self, chat_id, movie) -> bool:
+        g = self._read(chat_id)
+
+        idx = Movies.contains(g, "list", movie)
+        if idx >= 0:
+            g["list"].pop(idx)
+            ret = True
+        else:
+            ret = False
+
+        self._update(chat_id, g)
+        self.add_to_watched(chat_id, movie)
+        return ret
 
     def finished_movies(self, chat_id):
         g = self._read(chat_id)
@@ -205,6 +215,48 @@ def list_random(update, context):
         update.message.reply_text(
             "Not enough movies ({}) in movie list! Check with /list.".format(count),
         )
+
+
+def list_watched(update, context):
+    """
+    Mark a movie (index from list, or given by name) as watched.
+
+    Undocumented: add multiple movies by title to the list in one command
+    by seperating names with ' # '
+    """
+    chat_id = update.message.chat_id
+
+    if not context.args:
+        update.message.reply_text("Usage: /watched <movie title|index>")
+        return
+
+    for movie_or_idx in " ".join(context.args).split(" # "):
+        try:
+            idx = int(movie_or_idx)
+            # remove idx from list
+            movie = MOVIES.remove_movie(chat_id, idx)
+            if movie:
+                # add to finished list
+                MOVIES.add_to_watched(chat_id, movie)
+
+                update.message.reply_text(
+                    "Added '{}' to your finished list!".format(movie)
+                    + " (and removed from watchlist)"
+                )
+
+            else:
+                update.message.reply_text("/watched: if the movie title is just a number, surround it with quotes to add directly to the finished list")
+
+            # don't remove multiple movies by index in one command
+            return
+
+        except ValueError:
+            was_removed = MOVIES.watched_a_movie(chat_id, movie_or_idx)
+            update.message.reply_text(
+                "Added '{}' to your finished list!".format(movie_or_idx)
+                + " (and removed from watchlist)" if was_removed else ""
+            )
+
 
 def finished_list(update, context):
     chat_id = update.message.chat_id
@@ -338,6 +390,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("list", list_list))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
 
     updater.start_polling()
