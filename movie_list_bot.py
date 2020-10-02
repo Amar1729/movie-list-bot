@@ -46,6 +46,7 @@ class Movies:
     def __init__(self):
         pass
 
+    @staticmethod
     def _empty_chat():
         return {"list": [], "finished": []}
 
@@ -56,7 +57,7 @@ class Movies:
                 g = pickle.load(chatfile)
                 return g
 
-        return self._empty_chat()
+        return Movies._empty_chat()
 
     def _update(self, chat_id, g):
         f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
