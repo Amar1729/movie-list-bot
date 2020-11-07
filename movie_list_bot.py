@@ -6,11 +6,12 @@ import time
 from pathlib import Path
 from typing import Tuple
 
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler
 
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
 from db.movies import Movies
+from ui import endpoints
 
 
 logging.basicConfig(
@@ -161,6 +162,11 @@ def finished_list(update, context):
         )
 
 
+
+def inline_search(update, context):
+    endpoints.inline_search(update, context)
+
+
 def main():
     updater = Updater(KEY, use_context=True)
 
@@ -171,6 +177,8 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
+
+    updater.dispatcher.add_handler(InlineQueryHandler(inline_search))
 
     updater.start_polling()
 
