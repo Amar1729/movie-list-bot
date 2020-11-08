@@ -57,8 +57,8 @@ def create_message(movie_id: str):
         f"Year: {movie['year']}",
         "Genres:" + ", ".join(movie['genres']),
         "",
-        "Plot",
-        movie["plot outline"],
+        # sometimes 'plot outline' isn't there?
+        "Plot\n{}".format(movie["plot outline"]) if "plot outline" in movie else "",
         "",
         f"Rating: {movie['rating']} / 10.0",
         "",
