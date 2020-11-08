@@ -32,7 +32,8 @@ ONE, TWO, THREE, FOUR = map(str, range(4))
 
 def start(update, context):
     keyboard = [
-        [InlineKeyboardButton(SEARCH, callback_data=ONE)],
+        # TODO - can i switch to inline and then come back to the convo?
+        [InlineKeyboardButton(SEARCH, switch_inline_query_current_chat="")],
         [
             InlineKeyboardButton(WATCH_LIST, callback_data=TWO),
             InlineKeyboardButton(WATCHED, callback_data=THREE),
@@ -94,10 +95,6 @@ def end_convo_wrapper(msg, update, context):
     return ConversationHandler.END
 
 
-def search(update, context):
-    return end_convo_wrapper("search", update, context)
-
-
 def _show_watch_list(update, context):
     chat_id = update.effective_chat["id"]
     return end_convo_wrapper(list_watchlist(MOVIES, chat_id), update, context)
@@ -133,13 +130,13 @@ def interface():
     """
     conv_handler = ConversationHandler(
         entry_points=[
-            CommandHandler("start", start),
+            # TODO - have to implement switching between MarkupKeyboard / InlineQuery ?
+            # CommandHandler("start", start),
             CommandHandler("list", list_movies),
             MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
         ],
         states={
             FIRST: [
-                CallbackQueryHandler(search, pattern='^' + ONE + '$'),
                 CallbackQueryHandler(_show_watch_list, pattern='^' + TWO + '$'),
                 CallbackQueryHandler(_show_watched, pattern='^' + THREE + '$'),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
