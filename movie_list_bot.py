@@ -11,7 +11,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQu
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
 from db.movies import Movies
-from ui import endpoints
+from ui import endpoints, interface
 
 
 logging.basicConfig(
@@ -162,7 +162,6 @@ def finished_list(update, context):
         )
 
 
-
 def inline_search(update, context):
     endpoints.inline_search(update, context)
 
@@ -177,6 +176,9 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
+
+    conv_handler = interface.interface()
+    updater.dispatcher.add_handler(conv_handler)
 
     updater.dispatcher.add_handler(InlineQueryHandler(inline_search))
 
