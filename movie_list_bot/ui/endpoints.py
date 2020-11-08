@@ -40,6 +40,12 @@ def _search_imdb(title: str, limit: int = 5):
             break
 
 
+def short_title(movie_id: str) -> str:
+    """ Returns a short slug for a movie_id """
+    movie = IA.get_movie(movie_id)
+    return f"{movie['title']} // {movie['year']} // {movie['runtime'][0]}m"
+
+
 def create_message(movie_id: str):
     """ Displays a movie, given an IMDB movie ID """
     movie = IA.get_movie(movie_id, info=["main"])

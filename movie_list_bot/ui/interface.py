@@ -75,8 +75,8 @@ def handle_movie(update, context):
 
     keyboard = [
         [
-            InlineKeyboardButton(WATCH_LIST, callback_data=TWO),
-            InlineKeyboardButton(WATCHED, callback_data=THREE),
+            InlineKeyboardButton(WATCH_LIST, callback_data=TWO + SEP + imdb_id),
+            InlineKeyboardButton(WATCHED, callback_data=THREE + SEP + imdb_id),
         ],
         [InlineKeyboardButton(CANCEL, callback_data=FOUR)],
     ]
@@ -97,20 +97,30 @@ def end_convo_wrapper(msg, update, context):
 
 def _show_watch_list(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(list_watchlist(MOVIES, chat_id), update, context)
+    return end_convo_wrapper(general.list_watchlist(MOVIES, chat_id), update, context)
 
 
 def _show_watched(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(list_watched(MOVIES, chat_id), update, context)
+    return end_convo_wrapper(general.list_watched(MOVIES, chat_id), update, context)
 
 
 def _add_watch_list(update, context):
-    return end_convo_wrapper("add watched list", update, context)
+    chat_id = update.effective_chat["id"]
+    query = update.callback_query
+    movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1]
+
+    result_txt = general.add_watchlist(MOVIES, movie_id, chat_id)
+    return end_convo_wrapper(result_txt, update, context)
 
 
 def _add_watched(update, context):
-    return end_convo_wrapper("add watched", update, context)
+    chat_id = update.effective_chat["id"]
+    query = update.callback_query
+    movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][1]["callback_data"].split(SEP)[1]
+
+    result_txt = general.add_watched(MOVIES, movie_id, chat_id)
+    return end_convo_wrapper(result_txt, update, context)
 
 
 def end(update, context):
@@ -142,8 +152,8 @@ def interface():
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ],
             SECOND: [
-                CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + '$'),
-                CallbackQueryHandler(_add_watched, pattern='^' + THREE + '$'),
+                CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + SEP),
+                CallbackQueryHandler(_add_watched, pattern='^' + THREE + SEP),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ]
         },
