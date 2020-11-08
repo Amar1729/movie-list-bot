@@ -1,18 +1,16 @@
 #!/venv/bin/python3
 
 import logging
-import os
-import pickle
-import random
-import sys
 import time
-from pathlib import Path
 from typing import Tuple
 
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler
 
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
+from . import MOVIES
+from movie_list_bot import general
+from movie_list_bot.ui import endpoints, interface
 
 
 logging.basicConfig(
@@ -21,8 +19,6 @@ logging.basicConfig(
 )
 
 LOGGER = logging.getLogger(__name__)
-
-BASE_DIR = os.path.dirname(Path(__file__).absolute())
 
 # help info
 COMMANDS = {
@@ -40,103 +36,6 @@ HELP_STRING = (
     INTRO
     + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
 )
-
-
-class Movies:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def _empty_chat():
-        return {"list": [], "finished": []}
-
-    def _read(self, chat_id):
-        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
-        if os.path.exists(f):
-            with open(f, "rb") as chatfile:
-                g = pickle.load(chatfile)
-                return g
-
-        return Movies._empty_chat()
-
-    def _update(self, chat_id, g):
-        f = os.path.join(BASE_DIR, "chats", "{}.pickle".format(chat_id))
-        try:
-            with open(f, "wb") as chatfile:
-                pickle.dump(g, chatfile)
-        except Exception as e:
-            print("Could not write chat to disk. Exiting.")
-            print(e)
-            sys.exit(1)
-
-    @staticmethod
-    def contains(g, target, movie):
-        assert target in ["list", "finished"]
-        try:
-            return list(map(lambda e: e.lower(), g[target])).index(movie.lower())
-        except ValueError:
-            return -1
-
-    @staticmethod
-    def display(movie_list):
-        return "\n".join(
-            ["{}: {}".format(idx + 1, movie) for idx, movie in enumerate(movie_list)]
-        )
-
-    def add_movie(self, chat_id, movie):
-        g = self._read(chat_id)
-        if Movies.contains(g, "list", movie) == -1:
-            g["list"].append(movie)
-            self._update(chat_id, g)
-            return True
-        return False
-
-    def remove_movie(self, chat_id, movienum):
-        g = self._read(chat_id)
-        try:
-            moviename = g["list"].pop(movienum - 1)
-            self._update(chat_id, g)
-            return moviename
-        except IndexError:
-            return ""
-
-    def list_movies(self, chat_id):
-        g = self._read(chat_id)
-        return Movies.display(g["list"])
-
-    def add_to_watched(self, chat_id, movie):
-        g = self._read(chat_id)
-
-        if Movies.contains(g, "finished", movie) == -1:
-            g["finished"].append(movie)
-
-        self._update(chat_id, g)
-
-    def watched_a_movie(self, chat_id, movie) -> bool:
-        g = self._read(chat_id)
-
-        idx = Movies.contains(g, "list", movie)
-        if idx >= 0:
-            g["list"].pop(idx)
-            ret = True
-        else:
-            ret = False
-
-        self._update(chat_id, g)
-        self.add_to_watched(chat_id, movie)
-        return ret
-
-    def finished_movies(self, chat_id):
-        g = self._read(chat_id)
-        return Movies.display(g["finished"])
-
-    def get_random(self, chat_id, count):
-        g = self._read(chat_id)
-        random.shuffle(g["list"])
-        return Movies.display(g["list"][:count])
-
-
-MOVIES = Movies()
 
 
 def _help(update, context):
@@ -175,12 +74,7 @@ def list_remove(update, context):
 
 def list_list(update, context):
     chat_id = update.message.chat_id
-
-    ret = MOVIES.list_movies(chat_id)
-    if ret:
-        update.message.reply_text("Your list:\n{}".format(ret))
-    else:
-        update.message.reply_text("No movie list yet! Add movies with /add.")
+    update.message.reply_text(general.list_watchlist(MOVIES, chat_id))
 
 
 def list_random(update, context):
@@ -247,14 +141,11 @@ def list_watched(update, context):
 
 def finished_list(update, context):
     chat_id = update.message.chat_id
+    update.message.reply_text(MOVIES, chat_id)
 
-    ret = MOVIES.finished_movies(chat_id)
-    if ret:
-        update.message.reply_text("You've watched: \n{}".format(ret))
-    else:
-        update.message.reply_text(
-            "This chat hasn't finished any movies! Add them with /watched."
-        )
+
+def inline_search(update, context):
+    endpoints.inline_search(update, context)
 
 
 def main():
@@ -263,10 +154,13 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("help", _help))
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("list", list_list))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
+
+    conv_handler = interface.interface()
+    updater.dispatcher.add_handler(conv_handler)
+
+    updater.dispatcher.add_handler(InlineQueryHandler(inline_search))
 
     updater.start_polling()
 
