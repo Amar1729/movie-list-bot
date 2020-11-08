@@ -72,11 +72,6 @@ def list_remove(update, context):
         text = "Not enough items in list (invalid number?): {}".format(count)
     update.message.reply_text(text)
 
-def list_list(update, context):
-    chat_id = update.message.chat_id
-    update.message.reply_text(general.list_watchlist(MOVIES, chat_id))
-
-
 def list_random(update, context):
     chat_id = update.message.chat_id
 
@@ -139,11 +134,6 @@ def list_watched(update, context):
                     " (and removed from watchlist)" if was_removed else ""
                 )
             )
-
-
-def finished_list(update, context):
-    chat_id = update.message.chat_id
-    update.message.reply_text(MOVIES, chat_id)
 
 
 def inline_search(update, context):

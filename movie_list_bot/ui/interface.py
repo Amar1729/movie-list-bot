@@ -34,8 +34,8 @@ def start(update, context):
     keyboard = [
         [InlineKeyboardButton(SEARCH, callback_data=ONE)],
         [
-            InlineKeyboardButton(WATCHED, callback_data=TWO),
-            InlineKeyboardButton(WATCH_LIST, callback_data=THREE),
+            InlineKeyboardButton(WATCH_LIST, callback_data=TWO),
+            InlineKeyboardButton(WATCHED, callback_data=THREE),
         ],
     ]
 
@@ -49,8 +49,8 @@ def start(update, context):
 def list_movies(update, context):
     keyboard = [
         [
-            InlineKeyboardButton(WATCHED, callback_data=TWO),
-            InlineKeyboardButton(WATCH_LIST, callback_data=THREE),
+            InlineKeyboardButton(WATCH_LIST, callback_data=TWO),
+            InlineKeyboardButton(WATCHED, callback_data=THREE),
         ],
         [InlineKeyboardButton(CANCEL, callback_data=FOUR)],
     ]
@@ -86,7 +86,8 @@ def handle_movie(update, context):
     return SECOND
 
 
-def _todo(msg, update, context):
+def end_convo_wrapper(msg, update, context):
+    """ Ends a conversation with text 'msg' """
     query = update.callback_query
     query.answer()
     query.edit_message_text(text=msg)
@@ -94,25 +95,25 @@ def _todo(msg, update, context):
 
 
 def search(update, context):
-    return _todo("search", update, context)
-
-
-def _show_watched(update, context):
-    chat_id = update.effective_chat["id"]
-    return _todo(list_watched(MOVIES, chat_id), update, context)
+    return end_convo_wrapper("search", update, context)
 
 
 def _show_watch_list(update, context):
     chat_id = update.effective_chat["id"]
-    return _todo(list_watchlist(MOVIES, chat_id), update, context)
+    return end_convo_wrapper(list_watchlist(MOVIES, chat_id), update, context)
 
 
-def _add_watched(update, context):
-    return _todo("add watched", update, context)
+def _show_watched(update, context):
+    chat_id = update.effective_chat["id"]
+    return end_convo_wrapper(list_watched(MOVIES, chat_id), update, context)
 
 
 def _add_watch_list(update, context):
-    return _todo("add watched list", update, context)
+    return end_convo_wrapper("add watched list", update, context)
+
+
+def _add_watched(update, context):
+    return end_convo_wrapper("add watched", update, context)
 
 
 def end(update, context):
@@ -139,12 +140,13 @@ def interface():
         states={
             FIRST: [
                 CallbackQueryHandler(search, pattern='^' + ONE + '$'),
-                CallbackQueryHandler(_show_watched, pattern='^' + TWO + '$'),
-                CallbackQueryHandler(_show_watch_list, pattern='^' + THREE + '$'),
+                CallbackQueryHandler(_show_watch_list, pattern='^' + TWO + '$'),
+                CallbackQueryHandler(_show_watched, pattern='^' + THREE + '$'),
+                CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ],
             SECOND: [
-                CallbackQueryHandler(_add_watched, pattern='^' + TWO + '$'),
-                CallbackQueryHandler(_add_watch_list, pattern='^' + THREE + '$'),
+                CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + '$'),
+                CallbackQueryHandler(_add_watched, pattern='^' + THREE + '$'),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ]
         },
