@@ -56,6 +56,10 @@ def list_add(update, context):
             update.message.reply_text("'{}' already on list".format(movie.strip()))
 
 
+def deprecated_add(update, context):
+    update.message.reply_text("This endpoint deprecated. Add movies by searching for them by typing `@movie_list_bot move title`")
+
+
 def list_remove(update, context):
     chat_id = update.message.chat_id
 
@@ -144,10 +148,10 @@ def main():
     updater = Updater(KEY, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler("help", _help))
-    updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("watched", deprecated_add, pass_args=True))
 
     conv_handler = interface.interface()
     updater.dispatcher.add_handler(conv_handler)
