@@ -6,3 +6,5 @@ WATCH_LIST = f"{emoji.MOVIE} Watch List"
 CANCEL = f"{emoji.REDX} Cancel"
 
 SEP = ":::"
+
+DB_CONN = "sqlite:///bot.sqlite"
