@@ -109,17 +109,11 @@ def end(update, context):
 def interface():
     """
     Main handler for the bot interface.
-
-    # updater.dispatcher.add_handler(
-    #     MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
-    # )
     """
     conv_handler = ConversationHandler(
-        # entry_points=[CommandHandler("start", start)],
         entry_points=[
             CommandHandler("start", start),
-            # MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
-            MessageHandler(Filters.text & ~Filters.command, handle_movie)
+            MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
         ],
         states={
             FIRST: [
