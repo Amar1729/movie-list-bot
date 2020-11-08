@@ -1,17 +1,16 @@
 #!/venv/bin/python3
 
 import logging
-import os
 import time
-from pathlib import Path
 from typing import Tuple
 
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler
 
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
-from db.movies import Movies
-from ui import endpoints, interface
+from . import MOVIES
+from movie_list_bot import general
+from movie_list_bot.ui import endpoints, interface
 
 
 logging.basicConfig(
@@ -20,8 +19,6 @@ logging.basicConfig(
 )
 
 LOGGER = logging.getLogger(__name__)
-
-BASE_DIR = os.path.dirname(Path(__file__).absolute())
 
 # help info
 COMMANDS = {
@@ -39,9 +36,6 @@ HELP_STRING = (
     INTRO
     + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
 )
-
-
-MOVIES = Movies(BASE_DIR)
 
 
 def _help(update, context):
@@ -80,12 +74,7 @@ def list_remove(update, context):
 
 def list_list(update, context):
     chat_id = update.message.chat_id
-
-    ret = MOVIES.list_movies(chat_id)
-    if ret:
-        update.message.reply_text("Your list:\n{}".format(ret))
-    else:
-        update.message.reply_text("No movie list yet! Add movies with /add.")
+    update.message.reply_text(general.list_watchlist(MOVIES, chat_id))
 
 
 def list_random(update, context):
@@ -152,14 +141,7 @@ def list_watched(update, context):
 
 def finished_list(update, context):
     chat_id = update.message.chat_id
-
-    ret = MOVIES.finished_movies(chat_id)
-    if ret:
-        update.message.reply_text("You've watched: \n{}".format(ret))
-    else:
-        update.message.reply_text(
-            "This chat hasn't finished any movies! Add them with /watched."
-        )
+    update.message.reply_text(MOVIES, chat_id)
 
 
 def inline_search(update, context):
@@ -172,10 +154,8 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("help", _help))
     updater.dispatcher.add_handler(CommandHandler("add", list_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("list", list_list))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", list_watched, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("finished", finished_list))
 
     conv_handler = interface.interface()
     updater.dispatcher.add_handler(conv_handler)

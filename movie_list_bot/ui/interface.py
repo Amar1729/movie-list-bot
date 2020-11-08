@@ -13,6 +13,8 @@ from telegram.ext import (
 )
 
 # local
+from movie_list_bot import MOVIES
+from movie_list_bot.general import list_watchlist, list_watched
 from . import endpoints, emoji
 
 
@@ -35,6 +37,22 @@ def start(update, context):
             InlineKeyboardButton(WATCHED, callback_data=TWO),
             InlineKeyboardButton(WATCH_LIST, callback_data=THREE),
         ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.message.reply_text("Choose:", reply_markup=reply_markup)
+
+    return FIRST
+
+
+def list_movies(update, context):
+    keyboard = [
+        [
+            InlineKeyboardButton(WATCHED, callback_data=TWO),
+            InlineKeyboardButton(WATCH_LIST, callback_data=THREE),
+        ],
+        [InlineKeyboardButton(CANCEL, callback_data=FOUR)],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -80,11 +98,13 @@ def search(update, context):
 
 
 def _show_watched(update, context):
-    return _todo("finished list", update, context)
+    chat_id = update.effective_chat["id"]
+    return _todo(list_watched(MOVIES, chat_id), update, context)
 
 
 def _show_watch_list(update, context):
-    return _todo("watch list", update, context)
+    chat_id = update.effective_chat["id"]
+    return _todo(list_watchlist(MOVIES, chat_id), update, context)
 
 
 def _add_watched(update, context):
@@ -113,6 +133,7 @@ def interface():
     conv_handler = ConversationHandler(
         entry_points=[
             CommandHandler("start", start),
+            CommandHandler("list", list_movies),
             MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
         ],
         states={
