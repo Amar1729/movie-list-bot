@@ -11,6 +11,7 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 
 # local
 from . import emoji
+from movie_list_bot.constants import WATCH_LIST, WATCHED, CANCEL
 
 
 IA = IMDb()

@@ -14,14 +14,9 @@ from telegram.ext import (
 
 # local
 from movie_list_bot import MOVIES
-from movie_list_bot.general import list_watchlist, list_watched
-from . import endpoints, emoji
-
-
-SEARCH = f"{emoji.SEARCH} Search"
-WATCHED = f"{emoji.EYES} Watched"
-WATCH_LIST = f"{emoji.MOVIE} Watch List"
-CANCEL = f"{emoji.REDX} Cancel"
+from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SEP
+from movie_list_bot import general
+from movie_list_bot.ui import endpoints
 
 
 # stages for the interface
