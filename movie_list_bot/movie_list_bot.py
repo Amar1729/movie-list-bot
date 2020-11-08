@@ -134,8 +134,10 @@ def list_watched(update, context):
         except ValueError:
             was_removed = MOVIES.watched_a_movie(chat_id, movie_or_idx)
             update.message.reply_text(
-                "Added '{}' to your finished list!".format(movie_or_idx)
-                + " (and removed from watchlist)" if was_removed else ""
+                "Added '{}' to your finished list!{}".format(
+                    movie_or_idx,
+                    " (and removed from watchlist)" if was_removed else ""
+                )
             )
 
 
