@@ -13,7 +13,13 @@ from telegram.ext import (
 )
 
 # local
-from . import endpoints
+from . import endpoints, emoji
+
+
+SEARCH = f"{emoji.SEARCH} Search"
+WATCHED = f"{emoji.EYES} Watched"
+WATCH_LIST = f"{emoji.MOVIE} Watch List"
+CANCEL = f"{emoji.REDX} Cancel"
 
 
 # stages for the interface
@@ -24,10 +30,10 @@ ONE, TWO, THREE, FOUR = map(str, range(4))
 
 def start(update, context):
     keyboard = [
-        [InlineKeyboardButton("Search", callback_data=ONE)],
+        [InlineKeyboardButton(SEARCH, callback_data=ONE)],
         [
-            InlineKeyboardButton("Watched", callback_data=TWO),
-            InlineKeyboardButton("Watch List", callback_data=THREE),
+            InlineKeyboardButton(WATCHED, callback_data=TWO),
+            InlineKeyboardButton(WATCH_LIST, callback_data=THREE),
         ],
     ]
 
@@ -50,10 +56,10 @@ def handle_movie(update, context):
 
     keyboard = [
         [
-            InlineKeyboardButton("Watch List", callback_data=TWO),
-            InlineKeyboardButton("Watched", callback_data=THREE),
+            InlineKeyboardButton(WATCH_LIST, callback_data=TWO),
+            InlineKeyboardButton(WATCHED, callback_data=THREE),
         ],
-        [InlineKeyboardButton("Cancel", callback_data=FOUR)],
+        [InlineKeyboardButton(CANCEL, callback_data=FOUR)],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)

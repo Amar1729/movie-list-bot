@@ -9,6 +9,9 @@ from imdb import IMDb
 
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 
+# local
+from . import emoji
+
 
 IA = IMDb()
 
@@ -42,7 +45,7 @@ def create_message(movie_id: str):
     movie = IA.get_movie(movie_id, info=["main"])
 
     return "\n".join([
-        Emoji.MOVIE + movie["title"],
+        f"{emoji.MOVIE} {movie['title']}",
         "",
         f"Year: {movie['year']}",
         "Genres:" + ", ".join(movie['genres']),

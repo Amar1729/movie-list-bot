@@ -1,0 +1,4 @@
+MOVIE = "🎬"
+EYES = "👀"
+SEARCH = "🔍"
+REDX = "❌"
