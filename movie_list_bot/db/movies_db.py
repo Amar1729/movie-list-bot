@@ -14,22 +14,22 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def get_watchlist(chat_id: int) -> str:
+def get_watchlist(chat_id: int) -> List[int]:
     """ Get list of IMDB IDs a chat has on their watchlist """
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if chat:
         return chat.watch_list
     else:
-        return ""
+        return []
 
 
-def get_watched(chat_id: int) -> str:
+def get_watched(chat_id: int) -> List[int]:
     """ Get list of IMDB IDs a chat has on their watchlist """
     chat = session.query(Chat).filter(Chat.id == chat_id).first()
     if chat:
         return chat.watched
     else:
-        return ""
+        return []
 
 
 def add_watchlist(chat_id: int, movie_id: int) -> bool:
