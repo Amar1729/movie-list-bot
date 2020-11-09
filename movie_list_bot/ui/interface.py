@@ -13,7 +13,6 @@ from telegram.ext import (
 )
 
 # local
-from movie_list_bot import MOVIES
 from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SEP
 from movie_list_bot import general
 from movie_list_bot.ui import endpoints
@@ -92,12 +91,12 @@ def end_convo_wrapper(msg, update, context):
 
 def _show_watch_list(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(general.list_watchlist(MOVIES, chat_id), update, context)
+    return end_convo_wrapper(general.list_watchlist(chat_id), update, context)
 
 
 def _show_watched(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(general.list_watched(MOVIES, chat_id), update, context)
+    return end_convo_wrapper(general.list_watched(chat_id), update, context)
 
 
 def _add_watch_list(update, context):
@@ -105,7 +104,7 @@ def _add_watch_list(update, context):
     query = update.callback_query
     movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1]
 
-    result_txt = general.add_watchlist(MOVIES, movie_id, chat_id)
+    result_txt = general.add_watchlist(movie_id, chat_id)
     return end_convo_wrapper(result_txt, update, context)
 
 
@@ -114,7 +113,7 @@ def _add_watched(update, context):
     query = update.callback_query
     movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][1]["callback_data"].split(SEP)[1]
 
-    result_txt = general.add_watched(MOVIES, movie_id, chat_id)
+    result_txt = general.add_watched(movie_id, chat_id)
     return end_convo_wrapper(result_txt, update, context)
 
 

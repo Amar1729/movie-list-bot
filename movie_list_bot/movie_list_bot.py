@@ -8,9 +8,9 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQu
 
 # local settings.py with KEY (received from BotFather)
 from settings import KEY
-from . import MOVIES
 from movie_list_bot import general
 from movie_list_bot.ui import endpoints, interface
+from movie_list_bot.db import movies_db
 
 
 logging.basicConfig(
@@ -46,41 +46,21 @@ def deprecated_add(update, context):
     update.message.reply_text("This endpoint deprecated. Add movies by searching for them by typing `@movie_list_bot move title`")
 
 
-def list_remove(update, context):
-    chat_id = update.message.chat_id
+def deprecated_remove(update, context):
+    update.message.reply_text("This endpoint temporarily disabled. Removing movies from a list will be re-implemented in the bot's updated interactive interface.")
 
-    try:
-        count = int(context.args[0])
-    except (IndexError, ValueError):
-        update.message.reply_text("Usage: /remove <list index>")
-        return
-
-    movie = MOVIES.remove_movie(chat_id, count)
-    if movie:
-        text = "Removed: " + movie
-    else:
-        text = "Not enough items in list (invalid number?): {}".format(count)
-    update.message.reply_text(text)
 
 def list_random(update, context):
     chat_id = update.message.chat_id
 
-    try:
-        count = int(context.args[0])
-    except ValueError:
-        update.message.reply_text("Usage: /random [<number>]")
-        # count = 1
-        return
-    except IndexError:
-        count = 1
-
-    movie_list = MOVIES.get_random(chat_id, count)
-    if movie_list:
-        update.message.reply_text(movie_list)
+    movies = movies_db.get_watchlist(chat_id)
+    if movies:
+        random.shuffle(movies)
+        update.message.reply_text("\n".join(
+            movies[:3]
+        ))
     else:
-        update.message.reply_text(
-            "Not enough movies ({}) in movie list! Check with /list.".format(count),
-        )
+        update.message.reply_text("Not enough movies in to-watch list!")
 
 
 def inline_search(update, context):
@@ -92,7 +72,7 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler("help", _help))
     updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("remove", list_remove, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("remove", deprecated_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", deprecated_add, pass_args=True))
 

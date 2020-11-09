@@ -11,7 +11,7 @@ def _list_movies(ret: List[int]) -> str:
     ])
 
 
-def list_watchlist(movies, chat_id) -> str:
+def list_watchlist(chat_id) -> str:
     """ Get movies on a chat's watchlist """
     ret = movies_db.get_watchlist(chat_id)
     if ret:
@@ -20,7 +20,7 @@ def list_watchlist(movies, chat_id) -> str:
         return "No movie list yet! Add movies with /add."
 
 
-def list_watched(movies, chat_id) -> str:
+def list_watched(chat_id) -> str:
     """ Get movies a chat has finished """
     ret = movies_db.get_watched(chat_id)
     if ret:
@@ -29,7 +29,7 @@ def list_watched(movies, chat_id) -> str:
         return "This chat hasn't finished any movies! Add them with /add."
 
 
-def add_watchlist(movies, movie_id, chat_id):
+def add_watchlist(movie_id, chat_id):
     """ Add a movie by IMDB ID to a chat's to-watch list """
     if movies_db.add_watchlist(chat_id, movie_id):
         return "'{}' added to watch list".format(short_title(movie_id))
@@ -37,7 +37,7 @@ def add_watchlist(movies, movie_id, chat_id):
         return "'{}' already on watch list".format(short_title(movie_id))
 
 
-def add_watched(movies, movie_id, chat_id):
+def add_watched(movie_id, chat_id):
     """ Add a movie by IMDB ID to a chat's finished (watched) list """
     was_removed = movies_db.checkin(chat_id, movie_id)
     return "Added '{}' to your watched (finished) list!{}".format(
