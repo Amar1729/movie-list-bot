@@ -1,4 +1,4 @@
-from typing import Set
+from typing import List
 
 # third-party
 from sqlalchemy.orm import sessionmaker
@@ -42,13 +42,13 @@ def add_watchlist(chat_id: int, movie_id: int) -> bool:
         watch_list = chat.watch_list
         if movie_id in watch_list:
             return False
-        watch_list.update([movie_id])
+        watch_list.append(movie_id)
         chat.watch_list = watch_list
 
         session.commit()
     else:
-        watch_list = set([movie_id])
-        watched: Set[int] = set([])
+        watch_list = [movie_id]
+        watched: List[int] = []
         chat = Chat(id=chat_id, watch_list=watch_list, watched=watched)
 
         session.add(chat)
@@ -95,12 +95,12 @@ def add_watched(chat_id: int, movie_id: int):
         watched = chat.watched
         if movie_id in watched:
             return False
-        watched.update([movie_id])
+        watched.append(movie_id)
         chat.watched = watched
         session.commit()
     else:
-        watch_list: Set[int] = set([])
-        watched = set([movie_id])
+        watch_list: List[int] = []
+        watched = [movie_id]
         chat = Chat(id=chat_id, watch_list=watch_list, watched=watched)
         session.add(chat)
 

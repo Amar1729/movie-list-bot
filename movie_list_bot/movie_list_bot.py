@@ -42,20 +42,6 @@ def _help(update, context):
     update.message.reply_text(HELP_STRING)
 
 
-def list_add(update, context):
-    chat_id = update.message.chat_id
-
-    if not context.args:
-        update.message.reply_text("Usage: /add <movie title> [# <movie title> ...]")
-        return
-
-    for movie in " ".join(context.args).split(" # "):
-        if MOVIES.add_movie(chat_id, movie.strip()):
-            update.message.reply_text("'{}' added to list".format(movie.strip()))
-        else:
-            update.message.reply_text("'{}' already on list".format(movie.strip()))
-
-
 def deprecated_add(update, context):
     update.message.reply_text("This endpoint deprecated. Add movies by searching for them by typing `@movie_list_bot move title`")
 
@@ -95,49 +81,6 @@ def list_random(update, context):
         update.message.reply_text(
             "Not enough movies ({}) in movie list! Check with /list.".format(count),
         )
-
-
-def list_watched(update, context):
-    """
-    Mark a movie (index from list, or given by name) as watched.
-
-    Undocumented: add multiple movies by title to the list in one command
-    by seperating names with ' # '
-    """
-    chat_id = update.message.chat_id
-
-    if not context.args:
-        update.message.reply_text("Usage: /watched <movie title|index>")
-        return
-
-    for movie_or_idx in " ".join(context.args).split(" # "):
-        try:
-            idx = int(movie_or_idx)
-            # remove idx from list
-            movie = MOVIES.remove_movie(chat_id, idx)
-            if movie:
-                # add to finished list
-                MOVIES.add_to_watched(chat_id, movie)
-
-                update.message.reply_text(
-                    "Added '{}' to your finished list!".format(movie)
-                    + " (and removed from watchlist)"
-                )
-
-            else:
-                update.message.reply_text("/watched: if the movie title is just a number, surround it with quotes to add directly to the finished list")
-
-            # don't remove multiple movies by index in one command
-            return
-
-        except ValueError:
-            was_removed = MOVIES.watched_a_movie(chat_id, movie_or_idx)
-            update.message.reply_text(
-                "Added '{}' to your finished list!{}".format(
-                    movie_or_idx,
-                    " (and removed from watchlist)" if was_removed else ""
-                )
-            )
 
 
 def inline_search(update, context):

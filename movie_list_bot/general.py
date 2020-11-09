@@ -1,10 +1,10 @@
-from typing import Set
+from typing import List
 
 from movie_list_bot.db import movies_db
 from movie_list_bot.ui.endpoints import short_title
 
 
-def _list_movies(ret: Set[int]) -> str:
+def _list_movies(ret: List[int]) -> str:
     return "\n".join([
         f"{idx+1}: {short_title(movie_id)}"
         for idx, movie_id in enumerate(ret)
