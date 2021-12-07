@@ -21,33 +21,48 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 # help info
-COMMANDS = {
-    "/add": "Add a movie to your watchlist",
-    "/list": "List of movies to watch",
-    "/remove": "Remove a a movie from your watchlist (by number)",
-    "/random": "Get `n` random movies from your list (default returns only one)",
-    "/watched": "Tell movie_list_bot you've watched this movie (and remove it from your watchlist)",
-    "/finished": "List of movies your group has finished",
-    "/help": "Show help for this bot",
-}
+COMMANDS = """
+about - Information about this bot's source code
+help - Show help for this bot
+watch_list - Show the list of movies on your watch list
+finished - Show the list of movies you have finished
+"""
+
+# deprecated commands:
+"""
+/list - List of movies to watch
+/remove - Remove a a movie from your watchlist (by number)
+/random - Get 3 random movies from your list
+/watched - Tell movie_list_bot you've watched this movie (and remove it from your watchlist)
+"""
+
 
 INTRO = "Movie List Bot! A bot for keeping track of movies to watch with your friends.\n"
-HELP_STRING = (
-    INTRO
-    + "\n".join("{}: {}".format(c[0], c[1]) for c in COMMANDS.items())
-)
+
+HELP_STRING = INTRO + "Type @movie_list_bot inline to search for movies!\n" + COMMANDS
+ABOUT_STRING = INTRO + "https://github.com/Amar1729/movie-list-bot"
 
 
 def _help(update, context):
     update.message.reply_text(HELP_STRING)
 
 
+def _about(update, context):
+    update.message.reply_text(ABOUT_STRING)
+
+
 def deprecated_add(update, context):
-    update.message.reply_text("This endpoint deprecated. Add movies by searching for them by typing `@movie_list_bot move title`")
+    update.message.reply_text(
+        "This endpoint deprecated. Add movies by searching for them by typing `@movie_list_bot move title`",
+        reply_to_message_id=update.effective_message.message_id,
+    )
 
 
 def deprecated_remove(update, context):
-    update.message.reply_text("This endpoint temporarily disabled. Removing movies from a list will be re-implemented in the bot's updated interactive interface.")
+    update.message.reply_text(
+        "This endpoint temporarily disabled. Removing movies from a list will be re-implemented in the bot's updated interactive interface.",
+        reply_to_message_id=update.effective_message.message_id,
+    )
 
 
 def list_random(update, context):
@@ -71,6 +86,10 @@ def main():
     updater = Updater(KEY, use_context=True)
 
     updater.dispatcher.add_handler(CommandHandler("help", _help))
+    updater.dispatcher.add_handler(CommandHandler("about", _about))
+    updater.dispatcher.add_handler(CommandHandler("watch_list", watch_list))
+    updater.dispatcher.add_handler(CommandHandler("finished", finished))
+
     updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", deprecated_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
