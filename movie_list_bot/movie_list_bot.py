@@ -24,8 +24,7 @@ LOGGER = logging.getLogger(__name__)
 COMMANDS = """
 about - Information about this bot's source code
 help - Show help for this bot
-watch_list - Show the list of movies on your watch list
-finished - Show the list of movies you have finished
+list - Show your lists of movies (unwatched and finished)
 """
 
 # deprecated commands:
@@ -87,14 +86,14 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler("help", _help))
     updater.dispatcher.add_handler(CommandHandler("about", _about))
-    updater.dispatcher.add_handler(CommandHandler("watch_list", watch_list))
-    updater.dispatcher.add_handler(CommandHandler("finished", finished))
 
     updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", deprecated_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", deprecated_add, pass_args=True))
 
+    # check interface for handled events
+    # /list
     conv_handler = interface.interface()
     updater.dispatcher.add_handler(conv_handler)
 
