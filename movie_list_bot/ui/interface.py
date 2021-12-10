@@ -64,9 +64,6 @@ def handle_movie(update, context):
     """
     imdb_id = update.message.text
 
-    content = endpoints.create_message(imdb_id)
-    update.message.reply_text(content)
-
     keyboard = [
         [
             InlineKeyboardButton(WATCH_LIST, callback_data=TWO + SEP + imdb_id),
@@ -76,7 +73,12 @@ def handle_movie(update, context):
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text("Add to:", reply_markup=reply_markup)
+    content = endpoints.create_message(movie_id=imdb_id)
+    update.message.reply_text(
+        content,
+        reply_to_message_id=update.effective_message.message_id,
+        reply_markup=reply_markup
+    )
 
     return SECOND
 
