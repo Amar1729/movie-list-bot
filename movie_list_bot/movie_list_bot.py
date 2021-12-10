@@ -25,14 +25,15 @@ COMMANDS = """
 about - Information about this bot's source code
 help - Show help for this bot
 list - Show your lists of movies (unwatched and finished)
+add - (deprecated) Add movies to your watch list
+watched - (deprecated) Add movies to your finished list
+finished - (deprecated) Show your finished list
+remove - (deprecated) Remove movies from your finished list
 """
 
 # deprecated commands:
 """
-/list - List of movies to watch
-/remove - Remove a a movie from your watchlist (by number)
 /random - Get 3 random movies from your list
-/watched - Tell movie_list_bot you've watched this movie (and remove it from your watchlist)
 """
 
 
@@ -64,6 +65,13 @@ def deprecated_remove(update, context):
     )
 
 
+def deprecated_list(update, context):
+    update.message.reply_text(
+        "This endpoint deprecated. Listing watched or finished movies can be done with /list.",
+        reply_to_message_id=update.effective_message.message_id,
+    )
+
+
 def list_random(update, context):
     chat_id = update.message.chat_id
 
@@ -90,7 +98,8 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", deprecated_remove, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("watched", deprecated_add, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("watched", deprecated_list, pass_args=True))
+    updater.dispatcher.add_handler(CommandHandler("finished", deprecated_list, pass_args=True))
 
     # check interface for handled events
     # /list
