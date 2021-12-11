@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 # third-party
@@ -5,6 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 # local
 from .models import engine, Base, Chat
+from .movies import Movies
+
+_P = Path(__file__)
+CHAT_DIR = Path(*_P.parts[:-3])
 
 Base.metadata.create_all(engine)
 
@@ -107,7 +112,29 @@ def add_watched(chat_id: int, movie_id: int):
     return True
 
 
-class Movies:
-    """ Wrapper class for compatibility with old Movies object.
-    """
+def deprecated_get_watchlist(chat_id: int) -> List[str]:
+    m = Movies(CHAT_DIR)
+    g = m._read(chat_id).get("list", [])
+    return g
+
+
+def deprecated_remove_watchlist(chat_id: int, movie_num: int):
+    m = Movies(CHAT_DIR)
+    m.remove_movie(movie_num)
+
+
+def deprecated_get_watched(chat_id: int) -> List[str]:
+    m = Movies(CHAT_DIR)
+    g = m._read(chat_id).get("finished", [])
+    return g
+
+
+def deprecated_remove_watched(chat_id: int, movie_num: int):
+    m = Movies(CHAT_DIR)
+    g = m._read(chat_id)
+
+    try:
+        moviename = g["finished"].pop(movie_num - 1)
+        m._update(chat_id, g)
+    except IndexError:
     pass

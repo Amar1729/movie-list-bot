@@ -13,15 +13,21 @@ from telegram.ext import (
 )
 
 # local
-from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SEP
+from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SKIP, SEP
 from movie_list_bot import general
 from movie_list_bot.ui import endpoints
+from movie_list_bot.db.movies_db import (
+    deprecated_get_watchlist,
+    deprecated_remove_watchlist,
+    deprecated_get_watched,
+    deprecated_remove_watched,
+)
 
 
 # stages for the interface
-FIRST, SECOND = range(2)
+FIRST, SECOND, THIRD = range(3)
 # callback data
-ONE, TWO, THREE, FOUR = map(str, range(4))
+ONE, TWO, THREE, FOUR, FIVE = map(str, range(5))
 
 
 def start(update, context):
@@ -83,11 +89,74 @@ def handle_movie(update, context):
     return SECOND
 
 
+def update_helper(update, context) -> int:
+    chat_id = update.effective_chat.id
+
+    old_watchlist = deprecated_get_watchlist(chat_id)
+    old_finished = deprecated_get_watched(chat_id)
+
+    if not old_watchlist and not old_finished:
+        update.message.reply_text(
+            "This chat doesn't have any saved movies in the v1 database. Continue using as normal!",
+            reply_to_message_id=update.effective_message.message_id,
+        )
+
+        return ConversationHandler.END
+
+    if old_watchlist:
+        update.message.reply_text(
+            "Ok, updating from old database. Starting with your watchlist."
+        )
+
+        markups = []
+        for movie_idx, movie_title in enumerate(old_watchlist):
+            keyboard = [
+                [InlineKeyboardButton(f"({year}) {title}", callback_data=f"{TWO}{SEP}{imdb_id}{SEP}{movie_idx}")]
+                for imdb_id, title, year in endpoints.search_imdb_keyboard(movie_title)
+            ] + [
+                [
+                    InlineKeyboardButton(CANCEL, callback_data=FOUR),
+                    InlineKeyboardButton(SKIP, callback_data=FIVE),
+                ],
+            ]
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            markups.append(reply_markup)
+
+            # break
+
+        for m in markups:
+            update.message.reply_text(
+                "\n".join(old_watchlist),
+                reply_to_message_id=update.effective_message.message_id,
+                reply_markup=m,
+            )
+            break
+
+        return THIRD
+
+    if old_finished:
+        # still unimplemented
+        return THIRD
+
+
 def end_convo_wrapper(msg, update, context):
     """ Ends a conversation with text 'msg' """
     query = update.callback_query
     query.answer()
     query.edit_message_text(text=msg)
+    return ConversationHandler.END
+
+
+def continue_convo_wrapper(movie_id: str, movie_idx: int, operation: str, update, context):
+    query = update.callback_query
+    query.answer()
+
+    content = query.message.text.splitlines()
+    content[movie_idx] = operation + endpoints.short_title(movie_id)
+    text = "\n".join([f"{idx+1}: {line}" for idx, line in enumerate(content)])
+
+    query.edit_message_text(text=text)
     return ConversationHandler.END
 
 
@@ -99,6 +168,34 @@ def _show_watch_list(update, context):
 def _show_watched(update, context):
     chat_id = update.effective_chat["id"]
     return end_convo_wrapper(general.list_watched(chat_id), update, context)
+
+
+def _add_watch_list_inline(update, context):
+    chat_id = update.effective_chat["id"]
+    query = update.callback_query
+    movie_id, movie_idx, *_ = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1:]
+
+    # TODO - test
+    # result_txt = general.add_watchlist(movie_id, chat_id)
+    # deprecated_remove_watchlist(chat_id, movie_idx)
+    return continue_convo_wrapper(movie_id, int(movie_idx), WATCH_LIST[0], update, context)
+
+
+def _add_watched_inline(update, context):
+    query = update.callback_query
+    query.answer()
+    return ConversationHandler.END
+
+
+def skip(update, context):
+    # retur
+    query = update.callback_query
+    query.answer()
+    _, movie_idx, *_ = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1:]
+    # return END for now, but we should actually return a buttn(?) with callback data of
+    # movie_idx + 1
+    # to signal search keyboard ctor to move to next movie to search
+    return ConversationHandler.END
 
 
 def _add_watch_list(update, context):
@@ -139,6 +236,7 @@ def interface():
             # TODO - have to implement switching between MarkupKeyboard / InlineQuery ?
             # CommandHandler("start", start),
             CommandHandler("list", list_movies),
+            CommandHandler("update", update_helper),
             MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
         ],
         states={
@@ -151,6 +249,12 @@ def interface():
                 CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + SEP),
                 CallbackQueryHandler(_add_watched, pattern='^' + THREE + SEP),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
+            ],
+            THIRD: [
+                CallbackQueryHandler(_add_watch_list_inline, pattern='^' + TWO + SEP),
+                CallbackQueryHandler(_add_watched_inline, pattern='^' + THREE + SEP),
+                CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
+                CallbackQueryHandler(skip, pattern='^' + FIVE + '$'),
             ]
         },
         fallbacks=[CommandHandler("start", start)],

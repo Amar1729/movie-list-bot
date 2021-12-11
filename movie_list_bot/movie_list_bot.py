@@ -29,6 +29,7 @@ add - (deprecated) Add movies to your watch list
 watched - (deprecated) Add movies to your finished list
 finished - (deprecated) Show your finished list
 remove - (deprecated) Remove movies from your finished list
+update - Update old movie lists (if your chat has any)
 """
 
 # deprecated commands:

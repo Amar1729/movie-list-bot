@@ -41,6 +41,22 @@ def _search_imdb(title: str, limit: int = 5):
             break
 
 
+def search_imdb_keyboard(title: str, limit: int = 10):
+    for idx, result in enumerate(IA.search_movie(title)):
+        if result.data["kind"] == "movie":
+            try:
+                title = result["title"]
+                # thumb_url = result["cover url"]
+                desc = result["year"]
+            except KeyError:
+                continue
+
+            yield (result.getID(), title, desc)
+
+            if idx > limit:
+                break
+
+
 def short_title(movie_id: str) -> str:
     """ Returns a short slug for a movie_id """
     movie = IA.get_movie(movie_id)
