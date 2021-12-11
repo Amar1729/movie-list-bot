@@ -104,6 +104,7 @@ def main():
 
     # check interface for handled events
     # /list
+    # /update
     conv_handler = interface.interface()
     updater.dispatcher.add_handler(conv_handler)
 
