@@ -20,25 +20,26 @@ IA = IMDb()
 def _search_imdb(title: str, limit: int = 5):
     counter = 0
     for result in IA.search_movie(title):
-        print("Found movie: {}".format(result["title"]))
-        try:
-            title = result["title"]
-            thumb_url = result["cover url"]
-            desc = result["year"]
-        except KeyError:
-            continue
+        if result.data["kind"] == "movie":
+            print("Found movie: {}".format(result["title"]))
+            try:
+                title = result["title"]
+                thumb_url = result["cover url"]
+                desc = result["year"]
+            except KeyError:
+                continue
 
-        yield InlineQueryResultArticle(
-            id=uuid4(),
-            title=title,
-            thumb_url=thumb_url,
-            description=desc,
-            input_message_content=InputTextMessageContent(result.getID()),
-        )
+            yield InlineQueryResultArticle(
+                id=uuid4(),
+                title=title,
+                thumb_url=thumb_url,
+                description=desc,
+                input_message_content=InputTextMessageContent(result.getID()),
+            )
 
-        counter += 1
-        if counter > limit:
-            break
+            counter += 1
+            if counter > limit:
+                break
 
 
 def search_imdb_keyboard(title: str, limit: int = 10):
