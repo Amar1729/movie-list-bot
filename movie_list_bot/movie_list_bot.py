@@ -2,6 +2,7 @@
 
 import logging
 import time
+import random
 from typing import Tuple
 
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, InlineQueryHandler
