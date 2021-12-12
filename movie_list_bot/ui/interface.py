@@ -255,11 +255,8 @@ def _add_watched(update, context):
 def end(update, context):
     query = update.callback_query
     query.answer()
-    # is there a way to remove the keyboard markup without sending a msg?
-    # these two don't work ...
-    # query.delete()
-    # update.message.delete()
-    query.edit_message_text(text="Finished")
+    query.message.delete()
+    return ConversationHandler.END
 
 
 def end_update_dialog(update, context) -> int:
