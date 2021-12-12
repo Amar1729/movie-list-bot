@@ -80,9 +80,9 @@ def short_title(movie_id: str) -> str:
     if movie := get_movie(movie_id):
         return movie.slug()
 
-    movie = IA.get_movie(movie_id)
-    add_movie(**_get_imdb_kwargs(movie))
-    return f"{movie['title']} // {movie['year']} // {movie['runtime'][0]}m"
+    movie_result = IA.get_movie(movie_id)
+    movie = add_movie(**_get_imdb_kwargs(movie_result))
+    return movie.slug()
 
 
 def create_message(movie_id: str):
@@ -90,10 +90,9 @@ def create_message(movie_id: str):
     if movie := get_movie(movie_id):
         return movie.long_description()
 
-    movie = IA.get_movie(movie_id, info=["main"])
-    add_movie(**_get_imdb_kwargs(movie))
-    m = get_movie(movie.getID())
-    return m.long_description()
+    movie_result = IA.get_movie(movie_id, info=["main"])
+    movie = add_movie(**_get_imdb_kwargs(movie_result))
+    return movie.long_description()
 
 
 def inline_search(update, context):

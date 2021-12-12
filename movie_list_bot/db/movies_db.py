@@ -19,11 +19,15 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def add_movie(**kwargs):
+def add_movie(**kwargs) -> Movie_IMDB:
     """ Add an IMDB movie to our local db """
+    if movie := get_movie(kwargs["id"]):
+        return movie
+
     movie = Movie_IMDB(**kwargs)
     session.add(movie)
     session.commit()
+    return movie
 
 
 def get_movie(movie_id: str) -> Optional[Movie_IMDB]:
