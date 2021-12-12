@@ -141,11 +141,11 @@ def update_helper(update, context) -> int:
 
         reply_markup = render_markup(old_watchlist)
 
-            update.message.reply_text(
-                "\n".join(old_watchlist),
-                reply_to_message_id=update.effective_message.message_id,
+        update.message.reply_text(
+            "\n".join(old_watchlist),
+            reply_to_message_id=update.effective_message.message_id,
             reply_markup=reply_markup,
-            )
+        )
 
         return STATES.ADD_INLINE
 
