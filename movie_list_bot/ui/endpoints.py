@@ -12,6 +12,7 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 # local
 from . import emoji
 from movie_list_bot.constants import WATCH_LIST, WATCHED, CANCEL
+from movie_list_bot.db.movies_db import add_movie, get_movie
 
 
 IA = IMDb()
@@ -58,31 +59,41 @@ def search_imdb_keyboard(title: str, limit: int = 10):
                 break
 
 
+def _get_imdb_kwargs(movie) -> dict[str, str]:
+    kwargs = {
+        "id": movie.getID(),
+        "title": movie["title"],
+        "thumb_url": movie["cover url"],
+        "year": movie["year"],
+        "runtime": movie["runtime"][0],
+        "genres": ", ".join(movie["genres"]),
+        "plot_outline": movie.get("plot outline", None),
+        "rating": movie["rating"],
+        "url": IA.get_imdbURL(movie),
+    }
+
+    return kwargs
+
+
 def short_title(movie_id: str) -> str:
     """ Returns a short slug for a movie_id """
+    if movie := get_movie(movie_id):
+        return movie.slug()
+
     movie = IA.get_movie(movie_id)
+    add_movie(**_get_imdb_kwargs(movie))
     return f"{movie['title']} // {movie['year']} // {movie['runtime'][0]}m"
 
 
 def create_message(movie_id: str):
     """ Displays a movie, given an IMDB movie ID """
-    movie = IA.get_movie(movie_id, info=["main"])
+    if movie := get_movie(movie_id):
+        return movie.long_description()
 
-    return "\n".join([
-        f"{emoji.MOVIE} {movie['title']}",
-        "",
-        f"Year: {movie['year']}",
-        "Genres:" + ", ".join(movie['genres']),
-        "",
-        # sometimes 'plot outline' isn't there?
-        "Plot\n{}".format(movie["plot outline"]) if "plot outline" in movie else "",
-        "",
-        f"Rating: {movie['rating']} / 10.0",
-        "",
-        # TODO - can this be formatted as markdown?
-        # f"[thumbnail]\\({movie['cover url']}\\)",
-        movie["cover url"],
-    ])
+    movie = IA.get_movie(movie_id, info=["main"])
+    add_movie(**_get_imdb_kwargs(movie))
+    m = get_movie(movie.getID())
+    return m.long_description()
 
 
 def inline_search(update, context):

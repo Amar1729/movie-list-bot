@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # third-party
 from sqlalchemy.orm import sessionmaker
 
 # local
-from .models import engine, Base, Chat
+from .models import engine, Base, Chat, Movie_IMDB
 from .movies import Movies
 
 _P = Path(__file__)
@@ -17,6 +17,17 @@ Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
+
+
+def add_movie(**kwargs):
+    """ Add an IMDB movie to our local db """
+    movie = Movie_IMDB(**kwargs)
+    session.add(movie)
+    session.commit()
+
+
+def get_movie(movie_id: str) -> Optional[Movie_IMDB]:
+    return session.query(Movie_IMDB).filter(Movie_IMDB.id == movie_id).first()
 
 
 def get_watchlist(chat_id: int) -> List[int]:
