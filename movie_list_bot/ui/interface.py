@@ -3,7 +3,9 @@ Manage the interactive interface for this bot:
 Searching movie / adding them to watch/finished lists
 """
 
+import re
 from enum import Enum
+from typing import Optional
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup  # , ParseMode
 from telegram.ext import (
@@ -35,6 +37,12 @@ class STATES(Enum):
 
 # callback data
 ONE, TWO, THREE, FOUR, FIVE = map(str, range(5))
+
+ICON_MAP = {
+    TWO: WATCH_LIST[0],
+    THREE: WATCHED[0],
+    FIVE: SKIP[0],
+}
 
 
 def start(update, context):
@@ -96,6 +104,22 @@ def handle_movie(update, context):
     return STATES.ADD
 
 
+def render_markup(movie_list: list[str], index: int = 0) -> InlineKeyboardMarkup:
+    movie_title = movie_list[index]
+
+    keyboard = [
+        [InlineKeyboardButton(f"({year}) {title}", callback_data=f"{TWO}{SEP}{imdb_id}{SEP}{index}")]
+        for imdb_id, title, year in endpoints.search_imdb_keyboard(movie_title)
+    ] + [
+        [
+            InlineKeyboardButton(CANCEL, callback_data=FOUR),
+            InlineKeyboardButton(SKIP, callback_data=f'{FIVE}{SEP}{index}'),
+        ],
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
 def update_helper(update, context) -> int:
     chat_id = update.effective_chat.id
 
@@ -115,36 +139,23 @@ def update_helper(update, context) -> int:
             "Ok, updating from old database. Starting with your watchlist."
         )
 
-        markups = []
-        for movie_idx, movie_title in enumerate(old_watchlist):
-            keyboard = [
-                [InlineKeyboardButton(f"({year}) {title}", callback_data=f"{TWO}{SEP}{imdb_id}{SEP}{movie_idx}")]
-                for imdb_id, title, year in endpoints.search_imdb_keyboard(movie_title)
-            ] + [
-                [
-                    InlineKeyboardButton(CANCEL, callback_data=FOUR),
-                    InlineKeyboardButton(SKIP, callback_data=FIVE),
-                ],
-            ]
+        reply_markup = render_markup(old_watchlist)
 
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            markups.append(reply_markup)
-
-            # break
-
-        for m in markups:
             update.message.reply_text(
                 "\n".join(old_watchlist),
                 reply_to_message_id=update.effective_message.message_id,
-                reply_markup=m,
+            reply_markup=reply_markup,
             )
-            break
 
         return STATES.ADD_INLINE
 
     if old_finished:
         # still unimplemented
         return STATES.ADD_INLINE
+
+
+def update_transfer_movies(chat_id: int, movie_list: list[str]) -> bool:
+    return False
 
 
 def end_convo_wrapper(msg, update, context):
@@ -155,16 +166,37 @@ def end_convo_wrapper(msg, update, context):
     return ConversationHandler.END
 
 
-def continue_convo_wrapper(movie_id: str, movie_idx: int, operation: str, update, context):
+def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: str, update, context):
     query = update.callback_query
     query.answer()
 
     content = query.message.text.splitlines()
-    content[movie_idx] = operation + endpoints.short_title(movie_id)
+    for idx in range(len(content)):
+        # remove the number bullets from the beginning of each line
+        content[idx] = re.sub(r"^[0-9]*: ", "", content[idx])
+
+    # if movie_id is passed, renamed the current line to a short slug for that movie_id
+    if movie_id:
+        content[movie_idx] = ICON_MAP[operation] + endpoints.short_title(movie_id)
+    else:
+        content[movie_idx] = ICON_MAP[operation] + content[movie_idx]
+
     text = "\n".join([f"{idx+1}: {line}" for idx, line in enumerate(content)])
 
-    query.edit_message_text(text=text)
-    return ConversationHandler.END
+    # at end of list, end the conversation
+    if movie_idx >= len(content) - 1:
+        chat_id = query.effective_chat.id
+        ret = update_transfer_movies(chat_id, content)
+        text = "Successfully transferred your new list - see it with /list.\n" + text
+
+        return end_convo_wrapper(text, update, context)
+
+    query.edit_message_text(
+        text=text,
+        reply_markup=render_markup(content, movie_idx + 1),
+    )
+
+    return STATES.ADD_INLINE
 
 
 def _show_watch_list(update, context):
@@ -185,7 +217,7 @@ def _add_watch_list_inline(update, context):
     # TODO - test
     # result_txt = general.add_watchlist(movie_id, chat_id)
     # deprecated_remove_watchlist(chat_id, movie_idx)
-    return continue_convo_wrapper(movie_id, int(movie_idx), WATCH_LIST[0], update, context)
+    return continue_convo_wrapper(movie_id, int(movie_idx), TWO, update, context)
 
 
 def _add_watched_inline(update, context):
@@ -198,11 +230,8 @@ def skip(update, context):
     # retur
     query = update.callback_query
     query.answer()
-    _, movie_idx, *_ = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1:]
-    # return END for now, but we should actually return a buttn(?) with callback data of
-    # movie_idx + 1
-    # to signal search keyboard ctor to move to next movie to search
-    return ConversationHandler.END
+    movie_idx = int(query.data.split(SEP)[1])
+    return continue_convo_wrapper(None, movie_idx, FIVE, update, context)
 
 
 def _add_watch_list(update, context):
@@ -231,6 +260,13 @@ def end(update, context):
     # query.delete()
     # update.message.delete()
     query.edit_message_text(text="Finished")
+
+
+def end_update_dialog(update, context) -> int:
+    query = update.callback_query
+    query.answer()
+
+    query.edit_message_text(text="Update operation canceled.")
     return ConversationHandler.END
 
 
@@ -260,8 +296,8 @@ def interface():
             STATES.ADD_INLINE: [
                 CallbackQueryHandler(_add_watch_list_inline, pattern='^' + TWO + SEP),
                 CallbackQueryHandler(_add_watched_inline, pattern='^' + THREE + SEP),
-                CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
-                CallbackQueryHandler(skip, pattern='^' + FIVE + '$'),
+                CallbackQueryHandler(end_update_dialog, pattern='^' + FOUR + '$'),
+                CallbackQueryHandler(skip, pattern='^' + FIVE),
             ]
         },
         fallbacks=[CommandHandler("start", start)],
