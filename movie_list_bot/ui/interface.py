@@ -3,6 +3,8 @@ Manage the interactive interface for this bot:
 Searching movie / adding them to watch/finished lists
 """
 
+from enum import Enum
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup  # , ParseMode
 from telegram.ext import (
     ConversationHandler,
@@ -25,7 +27,12 @@ from movie_list_bot.db.movies_db import (
 
 
 # stages for the interface
-FIRST, SECOND, THIRD = range(3)
+class STATES(Enum):
+    SHOW = 1
+    ADD = 2
+    ADD_INLINE = 3
+
+
 # callback data
 ONE, TWO, THREE, FOUR, FIVE = map(str, range(5))
 
@@ -44,7 +51,7 @@ def start(update, context):
 
     update.message.reply_text("Choose:", reply_markup=reply_markup)
 
-    return FIRST
+    return STATES.SHOW
 
 
 def list_movies(update, context):
@@ -60,7 +67,7 @@ def list_movies(update, context):
 
     update.message.reply_text("Choose:", reply_markup=reply_markup)
 
-    return FIRST
+    return STATES.SHOW
 
 
 def handle_movie(update, context):
@@ -86,7 +93,7 @@ def handle_movie(update, context):
         reply_markup=reply_markup
     )
 
-    return SECOND
+    return STATES.ADD
 
 
 def update_helper(update, context) -> int:
@@ -133,11 +140,11 @@ def update_helper(update, context) -> int:
             )
             break
 
-        return THIRD
+        return STATES.ADD_INLINE
 
     if old_finished:
         # still unimplemented
-        return THIRD
+        return STATES.ADD_INLINE
 
 
 def end_convo_wrapper(msg, update, context):
@@ -240,17 +247,17 @@ def interface():
             MessageHandler(Filters.via_bot(username=set(["movie_list_bot"])), handle_movie)
         ],
         states={
-            FIRST: [
+            STATES.SHOW: [
                 CallbackQueryHandler(_show_watch_list, pattern='^' + TWO + '$'),
                 CallbackQueryHandler(_show_watched, pattern='^' + THREE + '$'),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ],
-            SECOND: [
+            STATES.ADD: [
                 CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + SEP),
                 CallbackQueryHandler(_add_watched, pattern='^' + THREE + SEP),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
             ],
-            THIRD: [
+            STATES.ADD_INLINE: [
                 CallbackQueryHandler(_add_watch_list_inline, pattern='^' + TWO + SEP),
                 CallbackQueryHandler(_add_watched_inline, pattern='^' + THREE + SEP),
                 CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
