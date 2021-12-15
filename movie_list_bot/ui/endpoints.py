@@ -2,6 +2,7 @@
 Endpoints and related functions this bot supports.
 """
 
+import logging
 from uuid import uuid4
 from typing import Optional
 
@@ -99,12 +100,9 @@ def create_message(movie_id: str):
 
 def inline_search(update, context):
     """ Search trakt for a movie """
-    # chat_id = update.message.chat_id
-
     query = update.inline_query.query
 
-    print("dbg:")
-    print(query)
+    logging.info(f"inline_search: {query}")
 
     update.inline_query.answer(
         list(_search_imdb(query))
