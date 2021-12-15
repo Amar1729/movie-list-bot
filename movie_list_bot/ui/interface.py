@@ -155,10 +155,6 @@ def update_helper(update, context) -> int:
         return STATES.ADD_INLINE
 
 
-def update_transfer_movies(chat_id: int, movie_list: list[str]) -> bool:
-    return False
-
-
 def end_convo_wrapper(msg, update, context):
     """ Ends a conversation with text 'msg' """
     query = update.callback_query
@@ -186,10 +182,7 @@ def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: s
 
     # at end of list, end the conversation
     if movie_idx >= len(content) - 1:
-        chat_id = query.effective_chat.id
-        ret = update_transfer_movies(chat_id, content)
         text = "Successfully transferred your new list - see it with /list.\n" + text
-
         return end_convo_wrapper(text, update, context)
 
     query.edit_message_text(
