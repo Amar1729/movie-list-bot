@@ -3,6 +3,7 @@ Manage the interactive interface for this bot:
 Searching movie / adding them to watch/finished lists
 """
 
+import logging
 import re
 from enum import Enum
 from typing import Optional
@@ -212,18 +213,26 @@ def _show_watched(update, context):
 def _add_watch_list_inline(update, context):
     chat_id = update.effective_chat["id"]
     query = update.callback_query
-    movie_id, movie_idx, *_ = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1:]
 
-    # TODO - test
-    # result_txt = general.add_watchlist(movie_id, chat_id)
-    # deprecated_remove_watchlist(chat_id, movie_idx)
+    movie_id, movie_idx = query.data.split(SEP)[1:]
+    logging.info(f"_add_watchlist_inline: {movie_id}, {movie_idx}")
+
+    _ = general.add_watchlist(movie_id, chat_id)
+    deprecated_remove_watchlist(chat_id, int(movie_idx))
     return continue_convo_wrapper(movie_id, int(movie_idx), TWO, update, context)
 
 
 def _add_watched_inline(update, context):
+    chat_id = update.effective_chat.id
     query = update.callback_query
     query.answer()
-    return ConversationHandler.END
+
+    movie_id, movie_idx = query.data.split(SEP)[1:]
+    logging.info(f"_add_watched_inline: {movie_id}, {movie_idx}")
+
+    _ = general.add_watched(movie_id, chat_id)
+    deprecated_remove_watched(chat_id, int(movie_idx))
+    return continue_convo_wrapper(movie_id, int(movie_idx), THREE, update, context)
 
 
 def skip(update, context):
