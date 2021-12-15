@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, PickleType
+from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.mutable import MutableList
 
 # local
 from movie_list_bot.constants import DB_CONN
@@ -18,8 +19,8 @@ class Chat(Base):
     __tablename__ = 'chat'
 
     id = Column(Integer, primary_key=True)
-    watch_list = Column(PickleType)
-    watched = Column(PickleType)
+    watch_list = Column(MutableList.as_mutable(JSON), default=[])
+    watched = Column(MutableList.as_mutable(JSON), default=[])
 
 
 class Movie_IMDB(Base):
@@ -27,10 +28,10 @@ class Movie_IMDB(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String(100))
-    thumb_url = Column(String)
+    thumb_url = Column(String, nullable=True)
     year = Column(Integer)
     runtime = Column(Integer)
-    genres = Column(PickleType)
+    genres = Column(JSON)
     # plot = Column(String)
     plot_outline = Column(String, nullable=True)
     rating = Column(String)
