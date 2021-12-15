@@ -3,9 +3,11 @@ Endpoints and related functions this bot supports.
 """
 
 from uuid import uuid4
+from typing import Optional
 
 # third-party
 from imdb import IMDb
+from imdb import Movie
 
 from telegram import InlineQueryResultArticle, InputTextMessageContent
 
@@ -59,11 +61,11 @@ def search_imdb_keyboard(title: str, limit: int = 10):
                 break
 
 
-def _get_imdb_kwargs(movie) -> dict[str, str]:
+def _get_imdb_kwargs(movie: Movie.Movie) -> dict[str, Optional[str]]:
     kwargs = {
         "id": movie.getID(),
         "title": movie["title"],
-        "thumb_url": movie["cover url"],
+        "thumb_url": movie.get("cover url"),
         "year": movie["year"],
         "runtime": movie["runtime"][0],
         "genres": ", ".join(movie["genres"]),
