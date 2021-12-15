@@ -12,6 +12,11 @@ class Movies:
     def _empty_chat():
         return {"list": [], "finished": []}
 
+    def remove(self, chat_id):
+        f = os.path.join(self.base_dir, "chats", "{}.pickle".format(chat_id))
+        if os.path.exists(f):
+            os.unlink(f)
+
     def _read(self, chat_id):
         f = os.path.join(self.base_dir, "chats", "{}.pickle".format(chat_id))
         if os.path.exists(f):

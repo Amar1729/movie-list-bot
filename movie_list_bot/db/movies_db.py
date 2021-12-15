@@ -127,6 +127,17 @@ def add_watched(chat_id: int, movie_id: int):
     return True
 
 
+def deprecated_remove_chat(chat_id: int):
+    """ removes a chat's pickle file if it is empty """
+    m = Movies(CHAT_DIR)
+    g = m._read(chat_id)
+
+    if g.get("list") or g.get("finished"):
+        return
+
+    m.remove(chat_id)
+
+
 def deprecated_get_watchlist(chat_id: int) -> List[str]:
     m = Movies(CHAT_DIR)
     g = m._read(chat_id).get("list", [])
@@ -135,7 +146,9 @@ def deprecated_get_watchlist(chat_id: int) -> List[str]:
 
 def deprecated_remove_watchlist(chat_id: int, movie_num: int):
     m = Movies(CHAT_DIR)
-    m.remove_movie(movie_num)
+    m.remove_movie(chat_id, movie_num)
+
+    deprecated_remove_chat(chat_id)
 
 
 def deprecated_get_watched(chat_id: int) -> List[str]:
@@ -153,3 +166,5 @@ def deprecated_remove_watched(chat_id: int, movie_num: int):
         m._update(chat_id, g)
     except IndexError:
     pass
+
+    deprecated_remove_chat(chat_id)
