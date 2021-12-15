@@ -62,8 +62,7 @@ def add_watchlist(chat_id: int, movie_id: int) -> bool:
         watch_list = chat.watch_list
         if movie_id in watch_list:
             return False
-        watch_list.append(movie_id)
-        chat.watch_list = watch_list
+        chat.watch_list.append(movie_id)
 
         session.commit()
     else:
@@ -72,6 +71,7 @@ def add_watchlist(chat_id: int, movie_id: int) -> bool:
         chat = Chat(id=chat_id, watch_list=watch_list, watched=watched)
 
         session.add(chat)
+        session.commit()
 
     return True
 
@@ -115,14 +115,14 @@ def add_watched(chat_id: int, movie_id: int):
         watched = chat.watched
         if movie_id in watched:
             return False
-        watched.append(movie_id)
-        chat.watched = watched
+        chat.watched.append(movie_id)
         session.commit()
     else:
         watch_list: List[int] = []
         watched = [movie_id]
         chat = Chat(id=chat_id, watch_list=watch_list, watched=watched)
         session.add(chat)
+        session.commit()
 
     return True
 
