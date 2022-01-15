@@ -105,16 +105,19 @@ def handle_movie(update, context):
     return STATES.ADD
 
 
-def render_markup(movie_list: list[str], index: int = 0) -> InlineKeyboardMarkup:
+def render_markup(movie_list: list[str], index: int = 0, operation: str = None) -> InlineKeyboardMarkup:
+    # requires parameter operation: TWO | THREE
+    assert operation in [TWO, THREE]
+    logging.info(f"Rendering markup. Index: {index}, List: {movie_list}")
     movie_title = movie_list[index]
 
     keyboard = [
-        [InlineKeyboardButton(f"({year}) {title}", callback_data=f"{TWO}{SEP}{imdb_id}{SEP}{index}")]
+        [InlineKeyboardButton(f"({year}) {title}", callback_data=f"{operation}{SEP}{imdb_id}{SEP}{index}")]
         for imdb_id, title, year in endpoints.search_imdb_keyboard(movie_title)
     ] + [
         [
             InlineKeyboardButton(CANCEL, callback_data=FOUR),
-            InlineKeyboardButton(SKIP, callback_data=f'{FIVE}{SEP}{index}'),
+            InlineKeyboardButton(SKIP, callback_data=f'{FIVE}{SEP}{index}{SEP}{operation}'),
         ],
     ]
 
@@ -140,7 +143,7 @@ def update_helper(update, context) -> int:
             "Ok, updating from old database. Starting with your watchlist."
         )
 
-        reply_markup = render_markup(old_watchlist)
+        reply_markup = render_markup(old_watchlist, operation=TWO)
 
         update.message.reply_text(
             "\n".join(old_watchlist),
@@ -151,7 +154,18 @@ def update_helper(update, context) -> int:
         return STATES.ADD_INLINE
 
     if old_finished:
-        # still unimplemented
+        update.message.reply_text(
+            "Ok, updating from old database. Reading your finished list."
+        )
+
+        reply_markup = render_markup(old_finished, operation=THREE)
+
+        update.message.reply_text(
+            "\n".join(old_finished),
+            reply_to_message_id=update.effective_message.message_id,
+            reply_markup=reply_markup,
+        )
+
         return STATES.ADD_INLINE
 
 
