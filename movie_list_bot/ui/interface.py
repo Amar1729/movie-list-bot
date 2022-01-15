@@ -183,6 +183,13 @@ def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: s
     else:
         content[movie_idx] = ICON_MAP[operation] + content[movie_idx]
 
+    if operation == FIVE:
+        assert operation_in_progress in [TWO, THREE]
+        operation = operation_in_progress
+        m_idx = movie_idx + 1
+    else:
+        m_idx = movie_idx
+
     text = "\n".join([f"{idx+1}: {line}" for idx, line in enumerate(content)])
 
     # at end of list, end the conversation
@@ -193,7 +200,7 @@ def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: s
 
     query.edit_message_text(
         text=text,
-        reply_markup=render_markup(content, movie_idx + 1, operation=operation),
+        reply_markup=render_markup(content, m_idx, operation=operation),
     )
 
     return STATES.ADD_INLINE
