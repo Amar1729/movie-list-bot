@@ -18,7 +18,7 @@ from telegram.ext import (
 )
 
 # local
-from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SKIP, SEP
+from movie_list_bot.constants import SEARCH, WATCH_LIST, WATCHED, CANCEL, SKIP, DELETE, SEP
 from movie_list_bot import general
 from movie_list_bot.ui import endpoints
 from movie_list_bot.db.movies_db import (
@@ -37,12 +37,13 @@ class STATES(Enum):
 
 
 # callback data
-ONE, TWO, THREE, FOUR, FIVE = map(str, range(5))
+ONE, TWO, THREE, FOUR, FIVE, SIX = map(str, range(6))
 
 ICON_MAP = {
     TWO: WATCH_LIST[0],
     THREE: WATCHED[0],
     FIVE: SKIP[0],
+    SIX: DELETE[0],
 }
 
 
@@ -118,6 +119,10 @@ def render_markup(movie_list: list[str], index: int = 0, operation: str = None) 
         [
             InlineKeyboardButton(CANCEL, callback_data=FOUR),
             InlineKeyboardButton(SKIP, callback_data=f'{FIVE}{SEP}{index}{SEP}{operation}'),
+        ],
+        [
+            # allow deleting entries from this list
+            InlineKeyboardButton(DELETE, callback_data=SIX),
         ],
     ]
 

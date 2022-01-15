@@ -5,6 +5,7 @@ WATCHED = f"{emoji.EYES} Watched"
 WATCH_LIST = f"{emoji.MOVIE} Watch List"
 CANCEL = f"{emoji.REDX} Cancel"
 SKIP = f"{emoji.SKIP} Skip"
+DELETE = f"{emoji.TRASH} Delete"
 
 SEP = ":::"
 
