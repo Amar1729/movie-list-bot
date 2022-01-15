@@ -155,15 +155,20 @@ def update_helper(update, context) -> int:
         return STATES.ADD_INLINE
 
 
-def end_convo_wrapper(msg, update, context):
+def end_convo_wrapper(update, context, msg: str = None) -> int:
     """ Ends a conversation with text 'msg' """
     query = update.callback_query
     query.answer()
+
+    if msg:
     query.edit_message_text(text=msg)
+    else:
+        query.delete()
+
     return ConversationHandler.END
 
 
-def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: str, update, context):
+def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: str, update, context, operation_in_progress: str = None):
     query = update.callback_query
     query.answer()
 
@@ -182,12 +187,13 @@ def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: s
 
     # at end of list, end the conversation
     if movie_idx >= len(content) - 1:
+        logging.info("Done with list updates, ending.")
         text = "Successfully transferred your new list - see it with /list.\n" + text
-        return end_convo_wrapper(text, update, context)
+        return end_convo_wrapper(update, context, msg=text)
 
     query.edit_message_text(
         text=text,
-        reply_markup=render_markup(content, movie_idx + 1),
+        reply_markup=render_markup(content, movie_idx + 1, operation=operation),
     )
 
     return STATES.ADD_INLINE
@@ -195,12 +201,12 @@ def continue_convo_wrapper(movie_id: Optional[str], movie_idx: int, operation: s
 
 def _show_watch_list(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(general.list_watchlist(chat_id), update, context)
+    return end_convo_wrapper(update, context, msg=general.list_watchlist(chat_id))
 
 
 def _show_watched(update, context):
     chat_id = update.effective_chat["id"]
-    return end_convo_wrapper(general.list_watched(chat_id), update, context)
+    return end_convo_wrapper(update, context, msg=general.list_watched(chat_id))
 
 
 def _add_watch_list_inline(update, context):
@@ -233,7 +239,8 @@ def skip(update, context):
     query = update.callback_query
     query.answer()
     movie_idx = int(query.data.split(SEP)[1])
-    return continue_convo_wrapper(None, movie_idx, FIVE, update, context)
+    operation_in_progress = query.data.split(SEP)[2]
+    return continue_convo_wrapper(None, movie_idx, FIVE, update, context, operation_in_progress)
 
 
 def _add_watch_list(update, context):
@@ -242,7 +249,7 @@ def _add_watch_list(update, context):
     movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"].split(SEP)[1]
 
     result_txt = general.add_watchlist(movie_id, chat_id)
-    return end_convo_wrapper(result_txt, update, context)
+    return end_convo_wrapper(update, context, msg=result_txt)
 
 
 def _add_watched(update, context):
@@ -251,22 +258,11 @@ def _add_watched(update, context):
     movie_id = query["message"]["reply_markup"]["inline_keyboard"][0][1]["callback_data"].split(SEP)[1]
 
     result_txt = general.add_watched(movie_id, chat_id)
-    return end_convo_wrapper(result_txt, update, context)
+    return end_convo_wrapper(update, context, msg=result_txt)
 
 
-def end(update, context):
-    query = update.callback_query
-    query.answer()
-    query.message.delete()
-    return ConversationHandler.END
-
-
-def end_update_dialog(update, context) -> int:
-    query = update.callback_query
-    query.answer()
-
-    query.edit_message_text(text="Update operation canceled.")
-    return ConversationHandler.END
+def end_update_dialog(*args) -> int:
+    return end_convo_wrapper(*args, msg="Update operation canceled.")
 
 
 def interface():
@@ -285,12 +281,12 @@ def interface():
             STATES.SHOW: [
                 CallbackQueryHandler(_show_watch_list, pattern='^' + TWO + '$'),
                 CallbackQueryHandler(_show_watched, pattern='^' + THREE + '$'),
-                CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
+                CallbackQueryHandler(end_convo_wrapper, pattern='^' + FOUR + '$'),
             ],
             STATES.ADD: [
                 CallbackQueryHandler(_add_watch_list, pattern='^' + TWO + SEP),
                 CallbackQueryHandler(_add_watched, pattern='^' + THREE + SEP),
-                CallbackQueryHandler(end, pattern='^' + FOUR + '$'),
+                CallbackQueryHandler(end_convo_wrapper, pattern='^' + FOUR + '$'),
             ],
             STATES.ADD_INLINE: [
                 CallbackQueryHandler(_add_watch_list_inline, pattern='^' + TWO + SEP),
