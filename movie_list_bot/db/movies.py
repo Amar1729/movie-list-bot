@@ -5,6 +5,9 @@ import sys
 
 
 class Movies:
+    """
+    Compatibility class for dealing with (obsolete) pickle files
+    """
     def __init__(self, base_dir: str):
         self.base_dir = base_dir
 
