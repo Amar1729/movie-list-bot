@@ -68,8 +68,9 @@ def deprecated_remove(update, context):
 
 
 def deprecated_list(update, context):
+    chat_id: int = update.effective_chat["id"]
     update.message.reply_text(
-        "This endpoint deprecated. Listing watched or finished movies can be done with /list.",
+        "This endpoint deprecated. Listing watched and finished movies can be done with /list.\nOld data shown below:\n----\n" + movies_db.deprecated_format_lists(chat_id),
         reply_to_message_id=update.effective_message.message_id,
     )
 

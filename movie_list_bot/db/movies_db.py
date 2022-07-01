@@ -157,6 +157,27 @@ def deprecated_get_watched(chat_id: int) -> List[str]:
     return g
 
 
+def deprecated_format_lists(chat_id: int) -> str:
+    """
+    While the /watched and /finished endpoints still exist, offer functionality
+    to read from existing pickle files and format old data into a message.
+    """
+    old_watchlist = deprecated_get_watchlist(chat_id)
+    old_finished = deprecated_get_watched(chat_id)
+
+    if old_watchlist:
+        old_w = "Old watchlist:\n" + "\n".join([f"{idx}: {v}" for idx, v in enumerate(old_watchlist, start=1)])
+    else:
+        old_w = "(empty watchlist)"
+
+    if old_finished:
+        old_f = "Old finished list:\n" + "\n".join([f"{idx}: {v}" for idx, v in enumerate(old_finished, start=1)])
+    else:
+        old_f = "(no finished movies)"
+
+    return old_w + "\n\n" + old_f
+
+
 def deprecated_remove_watched(chat_id: int, movie_num: int):
     m = Movies(CHAT_DIR)
     g = m._read(chat_id)
