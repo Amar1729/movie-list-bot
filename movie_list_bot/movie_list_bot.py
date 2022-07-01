@@ -23,15 +23,24 @@ LOGGER = logging.getLogger(__name__)
 
 # help info
 COMMANDS = """
-about - Information about this bot's source code
-help - Show help for this bot
-list - Show your lists of movies (unwatched and finished)
-add - (deprecated) Add movies to your watch list
-watched - (deprecated) Add movies to your finished list
-finished - (deprecated) Show your finished list
-remove - (deprecated) Remove movies from your finished list
-update - Update old movie lists (if your chat has any)
+/about - Information about this bot's source code
+/help - Show help for this bot
+/list - Show your lists of movies (unwatched and finished)
+----
+/add - (deprecated) Add movies to your watch list
+/watched - (deprecated) Add movies to your finished list
+/finished - (deprecated) Show your finished list
+/remove - (deprecated) Remove movies from your finished list
+
+Functionality for removing from a list will be adding to the bot's interactive interface soon.
+There is also a simple interface being worked on for transferring your old watched/finish lists
+to the new database (but adding the movies yourselves should hopefully be easier).
 """
+
+# TODO commands
+# """
+# /update - Update old movie lists (if your chat has any)
+# """
 
 # deprecated commands:
 """
@@ -42,7 +51,8 @@ update - Update old movie lists (if your chat has any)
 INTRO = "Movie List Bot! A bot for keeping track of movies to watch with your friends.\n"
 
 HELP_STRING = INTRO + "Type @movie_list_bot inline to search for movies!\n" + COMMANDS
-ABOUT_STRING = INTRO + "https://github.com/Amar1729/movie-list-bot"
+# temporary(?) - until i've fixed up some of the inconsistencies with this bot UI
+ABOUT_STRING = INTRO + "https://github.com/Amar1729/movie-list-bot\n----\nFeel free to log issues on this github repository if you have any problems."
 
 
 def _help(update, context):
