@@ -186,6 +186,6 @@ def deprecated_remove_watched(chat_id: int, movie_num: int):
         moviename = g["finished"].pop(movie_num - 1)
         m._update(chat_id, g)
     except IndexError:
-    pass
+        pass
 
     deprecated_remove_chat(chat_id)
