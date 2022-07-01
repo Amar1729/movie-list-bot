@@ -99,7 +99,7 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler("add", deprecated_add, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("remove", deprecated_remove, pass_args=True))
-    updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
+    # updater.dispatcher.add_handler(CommandHandler("random", list_random, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("watched", deprecated_list, pass_args=True))
     updater.dispatcher.add_handler(CommandHandler("finished", deprecated_list, pass_args=True))
 
