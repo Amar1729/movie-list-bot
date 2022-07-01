@@ -180,9 +180,13 @@ def end_convo_wrapper(update, context, msg: str = None) -> int:
     query.answer()
 
     if msg:
-    query.edit_message_text(text=msg)
+        query.edit_message_text(
+            text=msg,
+            parse_mode="markdown",
+            disable_web_page_preview=True
+        )
     else:
-        query.delete()
+        query.delete_message()
 
     return ConversationHandler.END
 
