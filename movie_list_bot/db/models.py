@@ -39,7 +39,7 @@ class Movie_IMDB(Base):
     url = Column(String)
 
     def slug(self) -> str:
-        return f"{self.title} // {self.year} // {self.runtime}m"
+        return f"[{self.title}]({self.url}) // {self.year} // {self.runtime}m"
 
     def long_description(self) -> str:
         return "\n".join([
