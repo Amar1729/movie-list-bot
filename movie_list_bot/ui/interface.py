@@ -6,7 +6,7 @@ Searching movie / adding them to watch/finished lists
 import logging
 import re
 from enum import Enum
-from typing import Optional
+from typing import Generator, Optional
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup  # , ParseMode
 from telegram.ext import (
@@ -174,17 +174,54 @@ def update_helper(update, context) -> int:
         return STATES.ADD_INLINE
 
 
+def msg_splitter(msg: str, size=4000) -> Generator[str, None, None]:
+    """Splits message into (line-delimited) chunks of ~size (default 4000) chars."""
+    if size < 1:
+        raise ValueError(f"{size}: size must be at least 1.")
+
+    # trivial case
+    if len(msg) < size:
+        yield msg
+        return
+
+    c = 0
+    buf = []
+    for line in msg.splitlines():
+        # count 1 for the newline char
+        if c + 1 + len(line) > size:
+            yield "\n".join(buf)
+            buf = [line]
+            c = len(line)
+        else:
+            c += 1 + len(line)
+            buf.append(line)
+
+    # invariant: buf must have some remaining stuff at the end
+    yield "\n".join(buf)
+
+
 def end_convo_wrapper(update, context, msg: str = None) -> int:
     """ Ends a conversation with text 'msg' """
     query = update.callback_query
     query.answer()
 
     if msg:
+        msg_it = msg_splitter(msg)
+        msg = next(msg_it)
         query.edit_message_text(
             text=msg,
             parse_mode="markdown",
             disable_web_page_preview=True
         )
+
+        for msg in msg_it:
+            chat_id = query.message.chat_id
+            context.bot.send_message(
+                chat_id=chat_id,
+                text=msg,
+                parse_mode="markdown",
+                disable_web_page_preview=True,
+            )
     else:
         query.delete_message()
 
